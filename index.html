@@ -1,0 +1,4257 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tayan - Первая помощь</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css">
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
+
+    
+
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f5f5f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 480px;
+            height: 100vh;
+            background: white;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 0 30px rgba(0,0,0,0.1);
+        }
+
+        .screen {
+            width: 100%;
+            height: 100%;
+            display: none;
+            flex-direction: column;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        .screen.active {
+            display: flex;
+        }
+
+        .heading {
+            font-family: 'Inter';
+            color: #2C2D5F;
+        }
+
+        .bg-light { background: #F5F5F8; }
+        .text-primary { color: #2C2D5F; }
+
+        .header {
+            background: #2C2D5F;
+            padding: 24px;
+            border-radius: 0 0 32px 32px;
+            color: white;
+        }
+
+        .header-top {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .back-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.2);
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: white;
+            font-size: 18px;
+        }
+
+        .back-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .header-title {
+            font-family: 'Inter';
+            font-size: 20px;
+            color: white;
+            flex: 1;
+        }
+
+        .btn {
+            padding: 16px 24px;
+            border-radius: 12px;
+            border: none;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: #2C2D5F;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #1f1f4d;
+        }
+
+        .btn-danger {
+            background: #B91717;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #9a1414;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 2px solid #2C2D5F;
+            color: #2C2D5F;
+        }
+
+        .btn-outline:hover {
+            background: rgba(44,45,95,0.1);
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-label {
+            display: block;
+            margin-bottom: 8px;
+            color: #2C2D5F;
+            font-weight: 600;
+        }
+
+        .input-field, .textarea-field {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e5e5e5;
+            border-radius: 12px;
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+        }
+
+        .input-field:focus, .textarea-field:focus {
+            outline: none;
+            border-color: #2C2D5F;
+        }
+
+        .textarea-field {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+
+        .category-card {
+            background: linear-gradient(135deg, #fff, #f5f5f5);
+            padding: 24px;
+            border-radius: 24px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            min-height: 160px;
+            transition: transform 0.3s;
+        }
+
+        .category-card:hover {
+            transform: translateY(-4px);
+        }
+
+        .category-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+        }
+
+        .content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+        }
+
+        .content.bg-light {
+            background: #F5F5F8;
+        }
+
+        .bottom-nav {
+            background: white;
+            border-top: 1px solid #e5e5e5;
+            padding: 16px 24px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .splash-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 24px;
+            padding: 48px;
+        }
+
+        .auth-header {
+            background: #2C2D5F;
+            padding: 64px 32px 48px;
+            border-radius: 0 0 40px 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .auth-header.white {
+            background: white;
+        }
+
+        .auth-form {
+            padding: 48px 32px;
+            flex: 1;
+        }
+
+        .auth-form.blue {
+            background: #2C2D5F;
+        }
+
+        .auth-form.blue .input-label {
+            color: white;
+        }
+
+        .auth-form.blue .input-field {
+            background: rgba(255,255,255,0.1);
+            border-color: rgba(255,255,255,0.2);
+            color: white;
+        }
+
+        .auth-link {
+            text-align: center;
+            margin-top: 24px;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .auth-link span {
+            color: #2C2D5F;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+
+        .sos-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #E57373, #EF5350);
+            color: white;
+            padding: 24px;
+            border-radius: 16px;
+            border: none;
+            font-family: 'Inter';
+            font-size: 18px;
+            cursor: pointer;
+            box-shadow: 0 8px 20px rgba(185,23,23,0.3);
+        }
+
+        .section-title {
+            font-family: 'Inter';
+            font-size: 18px;
+            color: #2C2D5F;
+            margin-bottom: 16px;
+        }
+
+        .function-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .function-item {
+            background: white;
+            padding: 16px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            transition: all 0.3s;
+        }
+
+        .function-item:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+            transform: translateX(4px);
+        }
+
+        .function-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: #F5F5F8;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .map-container {
+            height: 256px;
+            position: relative;
+            background: #e5e5e5;
+            overflow: hidden;
+        }
+
+        .map-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s;
+        }
+
+        .zoom-controls {
+            position: absolute;
+            bottom: 16px;
+            right: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .zoom-btn {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: white;
+            border: none;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            cursor: pointer;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .zoom-btn:hover {
+            background: #f5f5f5;
+        }
+
+        .volunteer-card {
+            background: white;
+            border: 2px solid #e5e5e5;
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 12px;
+            cursor: pointer;
+        }
+
+        .video-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+
+        .video-card {
+            background: white;
+            border-radius: 16px;
+            overflow: hidden;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            transition: transform 0.3s;
+        }
+
+        .video-card:hover {
+            transform: translateY(-4px);
+        }
+
+        .vm-stack{
+            display:flex;
+            flex-direction:column;
+            gap:12px;
+        }
+
+            .vm-card{
+            background:#fff;
+            border:1px solid #e5e5e5;
+            border-radius:14px;
+            padding:12px;
+        }
+
+            .vm-card h4{
+            margin:0 0 8px 0;
+            color:#2C2D5F;
+            font-weight:800;
+            font-size:14px;
+        }
+
+            .vm-card p{
+            margin:0;
+        }
+
+            .vm-muted{
+            color:#666;
+            font-size:14px;
+            line-height:1.5;
+            white-space:pre-line;
+        }
+
+
+
+
+        .video-thumbnail {
+            height: 128px;
+            position: relative;
+        }
+
+        .alert-box {
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 16px;
+            font-size: 14px;
+        }
+
+        .volunteer-badges {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 8px;
+        }
+
+        .badge {
+            padding: 6px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .badge.blue {
+            background: #E3F2FD;
+            border: 1px solid #90CAF9;
+            color: #1565C0;
+        }
+
+        .badge.green {
+            background: #E8F5E9;
+            border: 1px solid #A5D6A7;
+            color: #2E7D32;
+        }
+
+        .badge.gray {
+            background: #F5F5F8;
+            border: 1px solid #e5e5e5;
+            color: #2C2D5F;
+        }
+
+        .volunteer-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .icon-btn {
+            width: 30px;
+            height: 44px;
+            border-radius: 12px;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        .icon-btn.primary {
+            background: #2C2D5F;
+            color: white;
+            border: none;
+        }
+
+        .icon-btn.outline {
+            background: white;
+            color: #2C2D5F;
+            border: 2px solid #2C2D5F;
+        }
+
+        .volunteer-avatar {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: #E3E6FF;
+            color: #2C2D5F;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+
+
+        .alert-box.info {
+            background: #E3F2FD;
+            border: 1px solid #90CAF9;
+            color: #1565C0;
+        }
+
+        .alert-box.danger {
+            background: #FFEBEE;
+            border: 2px solid #EF9A9A;
+            color: #B71C1C;
+        }
+
+        .step-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .step-item {
+            display: flex;
+            gap: 16px;
+            background: #F5F5F8;
+            padding: 16px;
+            border-radius: 12px;
+        }
+
+        .step-number {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #2C2D5F;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Inter';
+            flex-shrink: 0;
+        }
+
+        .review-card {
+            background: white;
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .chat-message {
+            padding: 12px 16px;
+            border-radius: 16px;
+            max-width: 80%;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .chat-message.bot {
+            background: #f5f5f5;
+            color: #2C2D5F;
+            align-self: flex-start;
+        }
+
+        .chat-message.user {
+            background: #2C2D5F;
+            color: white;
+            align-self: flex-end;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 48px;
+            height: 28px;
+            background: #ddd;
+            border-radius: 14px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .toggle-switch.active {
+            background: #66BB6A;
+        }
+
+        .card {
+            box-shadow: 0 6px 16px rgba(0,0,0,0.06);
+        }
+
+
+        .toggle-slider {
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            transition: transform 0.3s;
+        }
+
+        .toggle-switch.active .toggle-slider {
+            transform: translateX(20px);
+        }
+
+        .language-option {
+            background: white;
+            padding: 16px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            transition: all 0.3s;
+            margin-bottom: 12px;
+        }
+
+        .language-option:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+        }
+
+        .language-option.selected {
+            border: 2px solid #2C2D5F;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .mb-3 { margin-bottom: 12px; }
+        .mb-6 { margin-bottom: 24px; }
+
+        @media (max-width: 480px) {
+            .app-container {
+                max-width: 100%;
+                box-shadow: none;
+            }
+        }
+        @media (max-width: 480px) {
+    .auth-form {
+        padding: 24px 16px; 
+    }
+
+    .auth-form input,
+    .auth-form button {
+        font-size: 14px; 
+    }
+
+    .auth-link {
+        font-size: 12px;
+    }
+}
+
+#vmLeaflet {
+  width: 100%;
+  height: 100%;
+}
+
+.leaflet-container {
+  background: #e5e5e5;
+  outline: none;
+}
+
+
+
+
+    </style>
+</head>
+<body>
+    <div id="app" class="app-container"></div>
+
+    <script>
+
+        (function () {
+            const r = window.location.reload.bind(window.location);
+            window.location.reload = (...args) => {
+                console.warn("LOCATION.RELOAD called");
+                console.trace("RELOAD TRACE");
+                return r(...args);
+            };
+
+            const a = window.location.assign.bind(window.location);
+            window.location.assign = (url) => {
+                console.warn("LOCATION.ASSIGN:", url);
+                console.trace("ASSIGN TRACE");
+                return a(url);
+            };
+
+            const p = window.location.replace.bind(window.location);
+            window.location.replace = (url) => {
+                console.warn("LOCATION.REPLACE:", url);
+                console.trace("REPLACE TRACE");
+                return p(url);
+            };
+
+            window.addEventListener("submit", (e) => {
+                console.warn("FORM SUBMIT CAPTURED:", e.target);
+                console.trace("SUBMIT TRACE");
+            }, true);
+
+            window.addEventListener("click", (e) => {
+                const link = e.target.closest("a");
+                if (link) {
+                console.warn("LINK CLICK:", link.href);
+                console.trace("LINK TRACE");
+                }
+            }, true);
+            })();
+
+
+
+        
+        const appState = {
+            currentScreen: 'splash',
+            userName: '',
+            userEmail: '',
+            userPhone: '',
+            userRole: "user",
+            mapZoom: 1,
+            selectedCategory: '',
+            selectedVideoId: 0,
+            selectedRequestId: 0,
+            selectedVolunteerRequestId: 0,
+            selectedVolunteerId: 0,
+            selectedVolunteerName: "",
+            selectedLanguage: 'ru',
+            hasActiveRequest: false,
+            activeRequestStatus: "",
+            notifications: {
+                sos: true,
+                volunteers: true,
+                updates: false
+            },
+            chatMessages: []
+        };
+
+        const API_BASE = "http://127.0.0.1:8000";
+        document.addEventListener("submit", (e) => {
+            console.warn("GLOBAL SUBMIT BLOCKED", e.target?.id || e.target);
+            e.preventDefault();
+            e.stopPropagation();
+        }, true);
+
+        console.log("BOOT:", Date.now(), "navigation type:", performance.getEntriesByType("navigation")[0]?.type);
+
+        window.addEventListener("beforeunload", () => {
+            console.log("BEFOREUNLOAD fired (page reload/close)");
+        });
+
+
+        function setToken(t) { localStorage.setItem("token", t); }
+        function getToken() { return localStorage.getItem("token") || ""; }
+        function setSelectedRequestId(id) {
+            const rid = Number(id) || 0;
+            appState.selectedRequestId = rid;
+            localStorage.setItem("selectedRequestId", String(rid));
+        }
+
+        function loadSelectedRequestId() {
+            const v = localStorage.getItem("selectedRequestId");
+            const rid = Number(v) || 0;
+            appState.selectedRequestId = rid;
+            return rid;
+        }
+
+        function clearSelectedRequestId() {
+            appState.selectedRequestId = 0;
+            localStorage.removeItem("selectedRequestId");
+        }
+
+        function clearToken() { localStorage.removeItem("token"); }
+        let pollInFlight = false;
+        let splashTimer = null;
+        let vmMap = null;
+        let vmUserMarker = null;
+        let vmVolMarker = null;
+        let vmLastFitKey = "";
+        let volGeoTimer = null;
+        let userMarker = null;
+        let volunteerMarker = null;
+        let vmRoute = null;
+        let vmRouteKey = "";
+        let userEtaTimer = null;
+        let hmMap = null;
+        let hmUserMarker = null;
+        let hmHospitalLayer = null;
+        let homeRefreshLock = false;
+
+
+
+
+
+
+
+        
+
+
+
+        async function api(path, method="GET", body=null, auth=false) {
+            const url = `http://127.0.0.1:8000${path}`;
+            const headers = {};
+
+            if (body !== null) headers["Content-Type"] = "application/json";
+            if (auth) headers["Authorization"] = "Bearer " + localStorage.getItem("token");
+
+            const res = await fetch(url, {
+                method,
+                headers,
+                body: body === null ? null : JSON.stringify(body)
+            });
+
+            const text = await res.text();
+            let data = null;
+            try { data = text ? JSON.parse(text) : null; } catch { data = text; }
+
+            if (!res.ok) {
+                console.error("API ERROR", res.status, data);
+                throw new Error((data && data.detail) ? data.detail : `HTTP ${res.status}`);
+            }
+            return data;
+            }
+
+        function getGeo() {
+                return new Promise((resolve) => {
+                    if (!navigator.geolocation) {
+                        resolve({ lat: null, lng: null });
+                        return;
+                    }
+                    navigator.geolocation.getCurrentPosition(
+                        (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+                        () => resolve({ lat: null, lng: null }),
+                        { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 }
+                    );
+                });
+        }
+        async function requireGeo(message = "Разрешите доступ к геолокации") {
+            const geo = await getGeo();
+            if (geo.lat == null || geo.lng == null) {
+                alert(message);
+                return null;
+            }
+            return geo;
+        }
+
+
+
+
+
+
+        
+        const botResponses = {
+            'привет': 'Здравствуйте! Чем могу вам помочь?',
+            'помощь': 'Я могу помочь вам с:\n• Определением симптомов\n• Первой помощью\n• Поиском ближайших больниц\n• Вызовом волонтеров',
+            'симптомы': 'Расскажите, что вас беспокоит? Опишите ваши симптомы подробнее.',
+            'температура': 'При высокой температуре:\n1. Измерьте температуру\n2. Пейте много жидкости\n3. Примите жаропонижающее\n4. При температуре выше 39°C вызовите врача',
+            'голова': 'При головной боли:\n1. Отдохните в тихом темном месте\n2. Выпейте воды\n3. Примите обезболивающее при необходимости\n4. Если боль сильная или не проходит - обратитесь к врачу',
+            'давление': 'При проблемах с давлением:\n1. Присядьте или прилягте\n2. Измерьте давление\n3. Примите назначенное лекарство\n4. При сильном недомогании вызовите скорую',
+            'ожог': 'При ожоге:\n1. Охладите место ожога водой 10-20 минут\n2. Не используйте лед или масло\n3. Наложите стерильную повязку\n4. При сильном ожоге вызовите скорую',
+            'порез': 'При порезе:\n1. Остановите кровотечение чистой тканью\n2. Промойте рану водой\n3. Обработайте антисептиком\n4. Наложите стерильную повязку',
+            'скорая': 'Номер скорой помощи: 103 или 112\nТакже вы можете вызвать волонтера через кнопку SOS в приложении.',
+            'спасибо': 'Пожалуйста! Всегда рад помочь. Берегите себя! 💙',
+            'default': 'Извините, я не совсем понял ваш вопрос. Попробуйте спросить о:\n• Симптомах (температура, головная боль, давление)\n• Первой помощи (ожог, порез)\n• Вызове помощи\n\nИли нажмите кнопку SOS для экстренной помощи.'
+        };
+
+        
+        const categoriesData = {
+            'heart-attack': {
+                title: 'Сердечный приступ',
+                icon: '❤️',
+                color: '#FFCDD2',
+                steps: [
+                    'Немедленно вызовите скорую помощь (103 или 112)',
+                    'Помогите человеку сесть в удобное положение',
+                    'Расстегните тесную одежду, обеспечьте доступ свежего воздуха',
+                    'Дайте аспирин (если нет аллергии) и нитроглицерин под язык',
+                    'Успокойте пострадавшего, не оставляйте его одного',
+                    'Будьте готовы к сердечно-легочной реанимации'
+                ]
+            },
+            'burns': {
+                title: 'Ожоги',
+                icon: '🔥',
+                color: '#FFE0B2',
+                steps: [
+                    'Немедленно прекратите воздействие источника ожога',
+                    'Охладите пораженный участок прохладной водой 10-20 минут',
+                    'Не используйте лед, масло или мази!',
+                    'Аккуратно снимите украшения до появления отека',
+                    'Наложите стерильную повязку',
+                    'При сильных ожогах вызовите скорую помощь'
+                ]
+            },
+            'cuts': {
+                title: 'Порезы и раны',
+                icon: '🩹',
+                color: '#F8BBD0',
+                steps: [
+                    'Вымойте руки перед оказанием помощи',
+                    'Остановите кровотечение, прижав чистую ткань к ране',
+                    'Промойте рану чистой водой',
+                    'Обработайте края раны антисептиком',
+                    'Наложите стерильную повязку',
+                    'При глубоких ранах обратитесь к врачу'
+                ]
+            },
+            'electric-shock': {
+                title: 'Электрический шок',
+                icon: '⚡',
+                color: '#FFF9C4',
+                steps: [
+                    'НЕ ПРИКАСАЙТЕСЬ к пострадавшему, пока не отключен ток!',
+                    'Отключите источник электричества',
+                    'Вызовите скорую помощь (103 или 112)',
+                    'Проверьте дыхание и пульс',
+                    'При необходимости начните сердечно-легочную реанимацию',
+                    'Обработайте ожоги от электричества'
+                ]
+            },
+            'fever': {
+                title: 'Высокая температура',
+                icon: '🌡️',
+                color: '#BBDEFB',
+                steps: [
+                    'Измерьте температуру тела',
+                    'Обеспечьте обильное питье',
+                    'Снимите лишнюю одежду',
+                    'Протрите тело теплой водой',
+                    'Дайте жаропонижающее (парацетамол или ибупрофен)',
+                    'При температуре выше 39°C или судорогах вызовите скорую'
+                ]
+            },
+            'poisoning': {
+                title: 'Отравление',
+                icon: '⚠️',
+                color: '#E1BEE7',
+                steps: [
+                    'Немедленно вызовите скорую помощь (103)',
+                    'Определите источник отравления',
+                    'НЕ вызывайте рвоту без указания врача!',
+                    'При отравлении через рот - дайте выпить воды',
+                    'Сохраните упаковку вещества для врачей',
+                    'Следите за дыханием и сознанием пострадавшего'
+                ]
+            }
+        };
+
+        const videosData = [
+            { id: 1, title: 'Что делать при ожоге?', duration: '5:32', color: '#FF6B6B' },
+            { id: 2, title: 'Как помочь при обмороке?', duration: '4:15', color: '#4ECDC4' },
+            { id: 3, title: 'Первая помощь при переломе', duration: '6:48', color: '#95E1D3' },
+            { id: 4, title: 'Остановка кровотечения', duration: '5:20', color: '#F38181' },
+            { id: 5, title: 'Искусственное дыхание', duration: '7:12', color: '#AA96DA' },
+            { id: 6, title: 'Помощь при отравлении', duration: '5:55', color: '#FCBAD3' }
+        ];
+
+        const reviewsData = [
+            {
+                name: 'Алина Сулайманова',
+                date: '10 ноября 2025',
+                rating: 5,
+                text: 'Волонтер приехал очень быстро! Профессионально оказал первую помощь. Огромное спасибо!',
+                volunteer: 'Эмиль Токтогулов'
+            },
+            {
+                name: 'Бактыгул Асанова',
+                date: '8 ноября 2025',
+                rating: 5,
+                text: 'Отличное приложение! Помогли моей маме при сердечном приступе. Врач приехал за 5 минут.',
+                volunteer: 'Айгуль Асанова'
+            },
+            {
+                name: 'Тимур Джумабаев',
+                date: '5 ноября 2025',
+                rating: 4,
+                text: 'Хорошая работа волонтера. Быстро сориентировался и оказал необходимую помощь.',
+                volunteer: 'Марат Бекболотов'
+            },
+            {
+                name: 'Нургуль Молдошева',
+                date: '3 ноября 2025',
+                rating: 5,
+                text: 'Спасибо огромное! Дочке стало плохо, волонтер приехала очень быстро и помогла до приезда скорой.',
+                volunteer: 'Гульнара Токтомушева'
+            },
+            {
+                name: 'Азамат Сыдыков',
+                date: '1 ноября 2025',
+                rating: 5,
+                text: 'Профессиональный подход, быстрая реакция. Рекомендую всем установить это приложение!',
+                volunteer: 'Эмиль Токтогулов'
+            }
+        ];
+
+        
+        document.addEventListener('DOMContentLoaded', async () => {
+            const token = localStorage.getItem("token");
+
+
+            if (token) {
+                try {
+                const me = await api("/auth/me", "GET", null, true);
+                appState.userName = me.name;
+                appState.userEmail = me.email || "";
+                appState.userPhone = me.phone;
+                appState.userRole = me.role || "user";
+                } catch (e) {
+                localStorage.removeItem("token");
+                }
+            }
+
+            loadSelectedRequestId();
+
+
+            appState.chatMessages.push({
+                type: 'bot',
+                text: 'Здравствуйте! Я AI-помощник приложения Tayan. Чем могу помочь?'
+            });
+
+            appState.chatMessages.push({
+                type: 'bot',
+                text: 'Я могу:\n• Помочь определить симптомы\n• Подсказать первые шаги помощи\n• Ответить на вопросы о здоровье'
+            });
+
+            const lastScreen = sessionStorage.getItem("lastScreen") || "";
+            const savedReqId = parseInt(sessionStorage.getItem("selectedRequestId") || "0", 10);
+
+            if (savedReqId) appState.selectedRequestId = savedReqId;
+
+            const canRestore =
+            token &&
+            lastScreen &&
+            !["splash","auth","login"].includes(lastScreen);
+
+            if (canRestore) {
+            appState.currentScreen = lastScreen;
+            renderScreen(lastScreen);
+            } else {
+            renderScreen("splash");
+            if (splashTimer) clearTimeout(splashTimer);
+            splashTimer = setTimeout(() => {
+                if (appState.currentScreen === "splash") {
+                navigateTo(token ? "home" : "auth", "splash timeout");
+                }
+            }, 2000);
+            }
+        });
+
+
+        
+        function navigateTo(screen, reason = "") {
+            if (splashTimer) {
+                clearTimeout(splashTimer);
+                splashTimer = null;
+            }
+
+
+            const prev = appState.currentScreen;
+
+            console.log("NAVIGATE:", prev, "→", screen, "reason:", reason, "time:", fmtLocal(new Date()));
+            console.trace("NAVIGATE TRACE");
+
+            stopPolling();
+            stopVolunteerGeo();
+            stopUserEta();
+
+
+
+            appState.currentScreen = screen;
+
+            sessionStorage.setItem("lastScreen", screen);
+            sessionStorage.setItem("selectedRequestId", String(appState.selectedRequestId || 0));
+
+            if (prev === "volunteer-map" && screen !== "volunteer-map") {
+            if (vmMap) {
+                vmMap.remove();
+                vmMap = null;
+                vmUserMarker = null;
+                vmVolMarker = null;
+                vmLastFitKey = "";
+            }
+        }
+
+        if (prev === "map" && screen !== "map") {
+            if (hmMap) {
+                hmMap.remove();
+                hmMap = null;
+                hmUserMarker = null;
+                hmHospitalLayer = null;
+            }
+        }
+
+
+        renderScreen(screen);
+
+        }
+
+
+
+
+
+
+        
+        function renderScreen(screen) {
+            const app = document.getElementById('app');
+            const screens = {
+                splash: renderSplash,
+                auth: renderAuth,
+                login: renderLogin,
+                home: renderHome,
+                "volunteer-open": renderVolunteerOpen,
+                profile: renderProfile,
+                settings: renderSettings,
+                notifications: renderNotifications,
+                language: renderLanguage,
+                privacy: renderPrivacy,
+                help: renderHelp,
+                myRequests: renderMyRequests,
+                requestDetail: renderRequestDetail,
+                "volunteer-my": renderVolunteerMy,
+                "volunteer-request": renderVolunteerRequest,
+                "volunteer-profile": renderVolunteerProfile,
+                categories: renderCategories,
+                'category-detail': renderCategoryDetail,
+                video: renderVideo,
+                'video-detail': renderVideoDetail,
+                map: renderMap,
+                'volunteer-map': renderVolunteerMap,
+                chat: renderChat,
+                reviews: renderReviews,
+                'symptom-form': renderSymptomForm
+                
+            };
+            
+            if (screens[screen]) {
+                app.innerHTML = screens[screen]();
+                attachEvents(screen);
+            }
+        }
+
+        
+        function renderSplash() {
+            return `
+                <div class="screen active splash-screen">
+                    <img src="logo2-removebg-preview.png" alt="Tayan Logo" style="width: 200px; height: 200px; object-fit: contain;">
+                    <p style="text-align: center; color: #666; font-size: 14px;">Первая помощь, когда важна каждая секунда</p>
+                </div>
+            `;
+        }
+
+        
+        function renderAuth() {
+            return `
+                <div class="screen active" style="background: #2C2D5F;">
+                <div class="auth-header white">
+                    <img src="logo2-removebg-preview.png" alt="Tayan Logo" style="width: 130px; height: 150px; object-fit: contain;">
+                    <h1 class="heading" style="color: #2C2D5F;">Добро пожаловать</h1>
+                </div>
+
+                <div class="auth-form blue">
+                    <div id="authBox">
+                    <div class="input-group">
+                        <label class="input-label">Имя</label>
+                        <input type="text" id="name" class="input-field" placeholder="Введите ваше имя" required>
+                    </div>
+
+                    <div class="input-group">
+                        <label class="input-label">Email</label>
+                        <input type="email" id="email" class="input-field" placeholder="example@mail.com" required>
+                    </div>
+
+                    <div class="input-group">
+                        <label class="input-label">Номер телефона</label>
+                        <input type="tel" id="phone" class="input-field" placeholder="+996 XXX XXX XXX" required>
+                    </div>
+
+                    <div class="input-group">
+                        <label class="input-label">Кто вы?</label>
+                        <select id="role" class="input-field" required>
+                        <option value="user">Пользователь</option>
+                        <option value="volunteer">Волонтёр</option>
+                        </select>
+                    </div>
+
+                    <div class="input-group">
+                        <label class="input-label">Пароль</label>
+                        <input type="password" id="password" class="input-field" placeholder="Введите пароль" required>
+                    </div>
+
+                    <button type="button" id="btnRegister" class="btn btn-danger" style="width: 100%;">Зарегистрироваться</button>
+                    </div>
+
+                    <p class="auth-link" style="color: rgba(255,255,255,0.7);">
+                    Уже есть аккаунт? <span onclick="navigateTo('login')" style="color: white;">Войти</span>
+                    </p>
+                </div>
+                </div>
+            `;
+        }
+
+
+        
+        function renderLogin() {
+            return `
+                <div class="screen active">
+                <div class="auth-header">
+                    <img src="tayan_logo.jpg" alt="Tayan Logo" style="width: 385px; height: 385px; border-radius:20%; object-fit: cover;">
+                    <h1 class="header-title">Вход</h1>
+                </div>
+
+                <div class="auth-form">
+                    <div id="loginBox">
+                    <div class="input-group">
+                        <label class="input-label">Номер телефона</label>
+                        <input type="tel" id="loginPhone" class="input-field" placeholder="+996 XXX XXX XXX" required>
+                    </div>
+
+                    <div class="input-group">
+                        <label class="input-label">Пароль</label>
+                        <input type="password" id="loginPassword" class="input-field" placeholder="Введите пароль" required>
+                    </div>
+
+                    <button type="button" id="btnLogin" class="btn btn-danger" style="width: 100%;">Войти</button>
+                    </div>
+
+                    <p class="auth-link">
+                    Нет аккаунта? <span onclick="navigateTo('auth')">Зарегистрироваться</span>
+                    </p>
+                </div>
+                </div>
+            `;
+        }
+
+        async function fetchActiveRequestForMe() {
+            if (appState.userRole === "volunteer") {
+                const list = await api("/volunteer/my", "GET", null, true);
+                return list.find(x => x.status === "accepted" || x.status === "in_progress") || null;
+            } else {
+                const list = await api("/requests/my", "GET", null, true);
+                return list.find(x => x.status === "new" || x.status === "accepted" || x.status === "in_progress") || null;
+            }
+        }
+
+
+
+
+        
+        function renderHome() {
+            const rid = Number(appState.selectedRequestId || loadSelectedRequestId() || 0);
+
+            const canShowMyMap = !!(rid && (appState.hasActiveRequest || appState.activeRequestStatus));
+
+            return `
+                <div class="screen active bg-light">
+                <div class="header">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                    <div>
+                        <p style="color: rgba(255,255,255,0.6); font-size: 14px;">Здравствуйте,</p>
+                        <h2 style="font-family: 'Inter'; font-size: 20px; color: white;">${appState.userName || 'Пользователь'}</h2>
+                    </div>
+                    <div onclick="navigateTo('profile')" style="width: 48px; height: 48px; border-radius: 50%; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; cursor: pointer;">👤</div>
+                    </div>
+                    
+                    <button type="button" class="sos-btn" onclick="showSOS()">🚨 ЭКСТРЕННАЯ ПОМОЩЬ (SOS)</button>
+                </div>
+                
+                <div class="content">
+                    <h3 class="section-title">Быстрый доступ</h3>
+                    
+                    <div class="card-grid mb-6">
+                    <div class="category-card" onclick="navigateTo('symptom-form')" style="background: linear-gradient(135deg, #FFE0B2, #FFECB3);">
+                        <div class="category-icon" style="background: rgba(255,152,0,0.2);">🩹</div>
+                        <span style="text-align: center; font-weight: 600; color: #2C2D5F;">Легкое<br>повреждение</span>
+                    </div>
+                    
+                    <div class="category-card" onclick="navigateTo('symptom-form')" style="background: linear-gradient(135deg, #FFF9C4, #FFFDE7);">
+                        <div class="category-icon" style="background: rgba(255,235,59,0.3);">⚠️</div>
+                        <span style="text-align: center; font-weight: 600; color: #2C2D5F;">Нестабильное<br>состояние</span>
+                    </div>
+                    </div>
+                    
+                    <h3 class="section-title">Основные функции</h3>
+
+                    <div class="function-list">
+                    ${canShowMyMap ? `
+                        <div class="function-item" onclick="openMyActiveMap()">
+                        <div class="function-icon">📍</div>
+                        <span style="flex: 1; font-weight: 600; color: #2C2D5F;">Моя активная заявка / Карта</span>
+                        <span style="background:#E3F2FD;color:#1565C0;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:700;">
+                            ${appState.activeRequestStatus || "active"}
+                        </span>
+                        <span>›</span>
+                        </div>
+                    ` : `
+                        <div class="function-item" style="opacity:.45; pointer-events:none;">
+                        <div class="function-icon">📍</div>
+                        <span style="flex: 1; font-weight: 600; color: #2C2D5F;">Активной заявки нет</span>
+                        <span style="font-size:12px;color:#666;">—</span>
+                        </div>
+                    `}
+
+                    ${appState.userRole === "volunteer" ? `
+                        <div class="function-item" onclick="navigateTo('volunteer-open')">
+                        <div class="function-icon">🧑‍⚕️</div>
+                        <span style="flex: 1; font-weight: 600; color: #2C2D5F;">Открытые заявки</span>
+                        <span>›</span>
+                        </div>
+
+                        <div class="function-item" onclick="navigateTo('volunteer-my')">
+                        <div class="function-icon">📌</div>
+                        <span style="flex: 1; font-weight: 600; color: #2C2D5F;">Мои принятые заявки</span>
+                        <span>›</span>
+                        </div>
+                    ` : ""}
+
+                    <div class="function-item" onclick="navigateTo('categories')">
+                        <div class="function-icon">📋</div>
+                        <span style="flex: 1; font-weight: 600; color: #2C2D5F;">Категории помощи</span>
+                        <span>›</span>
+                    </div>
+                    
+                    <div class="function-item" onclick="navigateTo('video')">
+                        <div class="function-icon">📹</div>
+                        <span style="flex: 1; font-weight: 600; color: #2C2D5F;">Видео-инструкции</span>
+                        <span>›</span>
+                    </div>
+                    
+                    <div class="function-item" onclick="navigateTo('map')">
+                        <div class="function-icon">🗺️</div>
+                        <span style="flex: 1; font-weight: 600; color: #2C2D5F;">Карта больниц</span>
+                        <span>›</span>
+                    </div>
+                    
+                    <div class="function-item" onclick="navigateTo('chat')">
+                        <div class="function-icon">💬</div>
+                        <span style="flex: 1; font-weight: 600; color: #2C2D5F;">AI-помощник</span>
+                        <span>›</span>
+                    </div>
+                    
+                    <div class="function-item" onclick="navigateTo('reviews')">
+                        <div class="function-icon">⭐</div>
+                        <span style="flex: 1; font-weight: 600; color: #2C2D5F;">Отзывы волонтеров</span>
+                        <span>›</span>
+                    </div>
+
+                    <div class="function-item" onclick="navigateTo('myRequests')">
+                        <div class="function-icon">📄</div>
+                        <span style="flex: 1; font-weight: 600; color: #2C2D5F;">Мои обращения</span>
+                        <span>›</span>
+                    </div>
+                    </div>
+                </div>
+                
+                <div class="bottom-nav">
+                    <div style="display: flex; flex-direction: column; align-items: center; color: #2C2D5F;">
+                    <span style="font-size: 24px;">🏠</span>
+                    <span style="font-size: 12px; font-weight: 600;">Главная</span>
+                    </div>
+                </div>
+                </div>
+            `;
+        }
+
+
+        function renderHomeActiveBlock() {
+        if (appState.hasActiveRequest) {
+            return `
+            <div class="function-item" onclick="openMyActiveMap()">
+                <div class="function-icon">📍</div>
+                <span style="flex: 1; font-weight: 600; color: #2C2D5F;">Моя активная заявка / Карта</span>
+                <span style="background:#E3F2FD;color:#1565C0;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:700;">
+                ${appState.activeRequestStatus}
+                </span>
+                <span>›</span>
+            </div>
+            `;
+        }
+
+        return `
+            <div class="function-item" style="opacity:.45; pointer-events:none;">
+            <div class="function-icon">📍</div>
+            <span style="flex: 1; font-weight: 600; color: #2C2D5F;">Активной заявки нет</span>
+            <span style="font-size:12px;color:#666;">—</span>
+            </div>
+        `;
+        }
+
+        async function loadVolunteerOpen() {
+            const list = await api("/requests/open", "GET", null, true);
+
+            const box = document.getElementById("volOpenList");
+            const st = document.getElementById("volOpenStatus");
+
+            if (st) st.innerHTML = `<div class="alert-box info">Открытых заявок: ${list.length}</div>`;
+
+            if (!box) return;
+
+            if (!list.length) {
+                box.innerHTML = `<div class="card">Сейчас нет открытых заявок.</div>`;
+                return;
+            }
+
+            box.innerHTML = list.map(r => `
+                <div class="card mb-3">
+                    <div style="display:flex; justify-content:space-between; gap:10px; margin-bottom:8px;">
+                        <div style="flex:1;">
+                            <div style="font-weight:800;color:#2C2D5F;">
+                                ${r.kind === "sos" ? "🚨 SOS" : "🩹 Симптомы"} • #${r.id}
+                            </div>
+                            <div style="color:#666;font-size:13px;">
+                                ${fmtLocal(r.created_at)}
+                            </div>
+                        </div>
+                        <span style="background:#FFF3E0;color:#E65100;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:800;height:fit-content;">
+                            ${r.status}
+                        </span>
+                    </div>
+
+                    ${r.address ? `<div style="color:#555;font-size:13px;margin-bottom:8px;">📍 ${r.address}</div>` : ``}
+                    ${r.symptoms ? `<div style="color:#555;font-size:13px;margin-bottom:8px;"><strong>Симптомы:</strong> ${r.symptoms}</div>` : ``}
+                    ${r.comments ? `<div style="color:#777;font-size:13px;margin-bottom:8px;"><strong>Комментарий:</strong> ${r.comments}</div>` : ``}
+
+                    <button class="btn btn-primary" style="width:100%;"
+                        onclick="acceptOpenRequest(${r.id})">
+                        ✅ Принять заявку
+                    </button>
+                </div>
+            `).join("");
+        }
+
+        async function loadVolunteerMy() {
+            const list = await api("/volunteer/my", "GET", null, true);
+
+            const box = document.getElementById("volMyList");
+            const st = document.getElementById("volMyStatus");
+
+            if (st) st.innerHTML = `<div class="alert-box info">Моих заявок: ${list.length}</div>`;
+
+            if (!box) return;
+
+            if (!list.length) {
+                box.innerHTML = `<div class="card">У вас пока нет принятых заявок.</div>`;
+                return;
+            }
+
+            box.innerHTML = list.map(r => `
+                <div class="card mb-3" onclick="openVolunteerRequest(${r.id})" style="cursor:pointer;">
+                    <div style="display:flex; justify-content:space-between; gap:10px; margin-bottom:8px;">
+                        <div style="flex:1;">
+                            <div style="font-weight:800;color:#2C2D5F;">
+                                ${r.kind === "sos" ? "🚨 SOS" : "🩹 Симптомы"} • #${r.id}
+                            </div>
+                            <div style="color:#666;font-size:13px;">
+                                ${fmtLocal(r.created_at)}
+                            </div>
+                        </div>
+                        <span style="background:#E8F5E9;color:#2E7D32;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:800;height:fit-content;">
+                            ${r.status}
+                        </span>
+                    </div>
+
+                    ${r.address ? `<div style="color:#555;font-size:13px;margin-bottom:8px;">📍 ${r.address}</div>` : ``}
+
+                    <div style="display:flex; gap:8px;">
+                        <button class="btn btn-outline" style="flex:1;"
+                            onclick="event.stopPropagation(); openVolunteerRequest(${r.id});">
+                            📄 Открыть
+                        </button>
+                        <button class="btn btn-primary" style="flex:1;"
+                            onclick="event.stopPropagation(); setSelectedRequestId(${r.id}); navigateTo('volunteer-map');">
+                            🗺️ Карта
+                        </button>
+                    </div>
+                </div>
+            `).join("");
+        }
+
+
+
+
+
+
+        function renderVolunteerOpen() {
+            return `
+                <div class="screen active bg-light">
+                    <div class="header">
+                        <button class="back-btn" onclick="navigateTo('home')">←</button>
+                        <h2 style="color:white;margin:0;">Открытые заявки</h2>
+                    </div>
+
+                    <div class="content">
+                        <div id="volOpenStatus"></div>
+                        <div id="volOpenList"></div>
+                    </div>
+                </div>
+            `;
+        }
+
+
+        function renderVolunteerMy() {
+            return `
+                <div class="screen active bg-light">
+                    <div class="header">
+                        <button class="back-btn" onclick="navigateTo('home')">←</button>
+                        <h2 style="color:white;margin:0;">Мои заявки</h2>
+                    </div>
+
+                    <div class="content">
+                        <div id="volMyStatus"></div>
+                        <div id="volMyList"></div>
+                    </div>
+                </div>
+            `;
+        }
+
+        
+
+        function renderVolunteerRequest() {
+            return `
+                <div class="screen active bg-light">
+                    <div class="header">
+                        <div class="header-top">
+                            <button class="back-btn" onclick="navigateTo('volunteer-my')">←</button>
+                            <h1 class="header-title">Заявка</h1>
+                        </div>
+                    </div>
+                    <div class="content">
+                        <div id="volunteerRequestBox" class="card">Загрузка...</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderVolunteerProfile() {
+            return `
+                <div class="screen active bg-light">
+                    <div class="header">
+                        <div class="header-top">
+                            <button class="back-btn" onclick="navigateTo('reviews')">←</button>
+                            <h1 class="header-title">${appState.selectedVolunteerName || "Профиль"}</h1>
+                        </div>
+                    </div>
+
+                    <div class="content">
+                        <div id="volunteerHeader" class="card mb-3">Загрузка профиля...</div>
+                        <h3 class="section-title">Отзывы</h3>
+                        <div id="volunteerReviewsList" class="function-list"></div>
+                    </div>
+                </div>
+            `;
+        }
+
+
+
+
+        
+        function renderProfile() {
+            return `
+                <div class="screen active">
+                    <div class="header">
+                        <div class="header-top">
+                            <button class="back-btn" onclick="navigateTo('home')">←</button>
+                            <h1 class="header-title">Профиль</h1>
+                            <button class="back-btn" onclick="navigateTo('settings')">⚙️</button>
+                        </div>
+                        
+                        <div style="display: flex; flex-direction: column; align-items: center; gap: 16px;">
+                            <div style="width: 96px; height: 96px; border-radius: 50%; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; font-size: 42px;">👤</div>
+                            <h2 style="font-family: "Inter"; color: white;">${appState.userName || 'Пользователь'}</h2>
+                        </div>
+                    </div>
+                    
+                    <div class="content">
+                        <div class="card mb-3">
+                            <div style="display: flex; gap: 16px; align-items: center;">
+                                <div class="function-icon">📧</div>
+                                <div>
+                                    <p style="color: #999; font-size: 12px;">Email</p>
+                                    <p class="text-primary">${appState.userEmail || 'email@example.com'}</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="card mb-3">
+                            <div style="display: flex; gap: 16px; align-items: center;">
+                                <div class="function-icon">📱</div>
+                                <div>
+                                    <p style="color: #999; font-size: 12px;">Телефон</p>
+                                    <p class="text-primary">${appState.userPhone || '+996 XXX XXX XXX'}</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <button class="btn btn-outline" style="width: 100%; margin-top: 24px; border-color: #B91717; color: #B91717;" onclick="logout()">
+                            Выйти из аккаунта
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        
+        function renderSettings() {
+            return `
+                <div class="screen active">
+                    <div class="header">
+                        <div class="header-top">
+                            <button class="back-btn" onclick="navigateTo('profile')">←</button>
+                            <h1 class="header-title">Настройки</h1>
+                        </div>
+                    </div>
+                    
+                    <div class="content">
+                        <div class="function-list">
+                            <div class="function-item" onclick="navigateTo('notifications')">
+                                <div class="function-icon">🔔</div>
+                                <div style="flex: 1;">
+                                    <p style="font-weight: 600; color: #2C2D5F;">Уведомления</p>
+                                    <p style="color: #666; font-size: 12px;">Настройка уведомлений</p>
+                                </div>
+                                <span>›</span>
+                            </div>
+                            
+                            <div class="function-item" onclick="navigateTo('language')">
+                                <div class="function-icon">🌐</div>
+                                <div style="flex: 1;">
+                                    <p style="font-weight: 600; color: #2C2D5F;">Язык</p>
+                                    <p style="color: #666; font-size: 12px;">Русский</p>
+                                </div>
+                                <span>›</span>
+                            </div>
+
+                            <div class="function-item" onclick="navigateTo('privacy')">
+                                <div class="function-icon">🔒</div>
+                                <div style="flex: 1;">
+                                    <p style="font-weight: 600; color: #2C2D5F;">Приватность</p>
+                                    <p style="color: #666; font-size: 12px;">Управление данными</p>
+                                </div>
+                                <span>›</span>
+                            </div>
+
+                            <div class="function-item" onclick="navigateTo('help')">
+                                <div class="function-icon">❓</div>
+                                <div style="flex: 1;">
+                                    <p style="font-weight: 600; color: #2C2D5F;">Помощь</p>
+                                    <p style="color: #666; font-size: 12px;">FAQ и поддержка</p>
+                                </div>
+                                <span>›</span>
+                            </div>
+                        </div>
+                        
+                        <button class="btn btn-outline" style="width: 100%; margin-top: 24px; border-color: #B91717; color: #B91717;" onclick="logout()">
+                            Выйти из аккаунта
+                        </button>
+                        
+                        <p style="text-align: center; color: #999; font-size: 12px; margin-top: 24px;">Версия приложения 1.0.0</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        
+        function renderNotifications() {
+            return `
+                <div class="screen active">
+                    <div class="header">
+                        <div class="header-top">
+                            <button class="back-btn" onclick="navigateTo('settings')">←</button>
+                            <h1 class="header-title">Уведомления</h1>
+                        </div>
+                    </div>
+                    
+                    <div class="content">
+                        <div class="alert-box info">
+                            💡 <strong>Важно:</strong> Рекомендуем оставить уведомления SOS включенными для экстренных случаев.
+                        </div>
+
+                        <div class="function-list">
+                            <div class="function-item" onclick="toggleNotification('sos')">
+                                <div class="function-icon">🚨</div>
+                                <div style="flex: 1;">
+                                    <p style="font-weight: 600; color: #2C2D5F;">Экстренные уведомления (SOS)</p>
+                                    <p style="color: #666; font-size: 12px;">Важные оповещения о помощи</p>
+                                </div>
+                                <div class="toggle-switch ${appState.notifications.sos ? 'active' : ''}" id="toggle-sos">
+                                    <div class="toggle-slider"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="function-item" onclick="toggleNotification('volunteers')">
+                                <div class="function-icon">👥</div>
+                                <div style="flex: 1;">
+                                    <p style="font-weight: 600; color: #2C2D5F;">Волонтеры</p>
+                                    <p style="color: #666; font-size: 12px;">Уведомления о волонтерах</p>
+                                </div>
+                                <div class="toggle-switch ${appState.notifications.volunteers ? 'active' : ''}" id="toggle-volunteers">
+                                    <div class="toggle-slider"></div>
+                                </div>
+                            </div>
+
+                            <div class="function-item" onclick="toggleNotification('updates')">
+                                <div class="function-icon">📢</div>
+                                <div style="flex: 1;">
+                                    <p style="font-weight: 600; color: #2C2D5F;">Обновления</p>
+                                    <p style="color: #666; font-size: 12px;">Новости и обновления приложения</p>
+                                </div>
+                                <div class="toggle-switch ${appState.notifications.updates ? 'active' : ''}" id="toggle-updates">
+                                    <div class="toggle-slider"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        
+        function renderLanguage() {
+            const languages = [
+                { code: 'ru', name: 'Русский', flag: 'RU' },
+                { code: 'kg', name: 'Кыргызча', flag: 'KG' },
+                { code: 'en', name: 'English', flag: 'EN' }
+            ];
+
+            return `
+                <div class="screen active">
+                    <div class="header">
+                        <div class="header-top">
+                            <button class="back-btn" onclick="navigateTo('settings')">←</button>
+                            <h1 class="header-title">Язык приложения</h1>
+                        </div>
+                    </div>
+                    
+                    <div class="content">
+                        ${languages.map(lang => `
+                            <div class="language-option ${appState.selectedLanguage === lang.code ? 'selected' : ''}" onclick="selectLanguage('${lang.code}')">
+                                <div style="display: flex; align-items: center; gap: 12px;">
+                                    <span style="font-size: 32px;">${lang.flag}</span>
+                                    <span style="font-weight: 600; color: #2C2D5F;">${lang.name}</span>
+                                </div>
+                                ${appState.selectedLanguage === lang.code ? '<span style="color: #2C2D5F; font-size: 20px;">✓</span>' : ''}
+                            </div>
+                        `).join('')}
+                        
+                        <div class="alert-box info" style="margin-top: 24px;">
+                            💡 <strong>Примечание:</strong> Изменение языка будет применено после перезапуска приложения.
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        
+        function renderPrivacy() {
+            return `
+                <div class="screen active">
+                    <div class="header">
+                        <div class="header-top">
+                            <button class="back-btn" onclick="navigateTo('settings')">←</button>
+                            <h1 class="header-title">Приватность</h1>
+                        </div>
+                    </div>
+                    
+                    <div class="content">
+                        <h3 class="section-title">Управление данными</h3>
+                        
+                        <div class="function-list">
+                            <div class="function-item">
+                                <div class="function-icon">📍</div>
+                                <div style="flex: 1;">
+                                    <p style="font-weight: 600; color: #2C2D5F;">Местоположение</p>
+                                    <p style="color: #666; font-size: 12px;">Используется для поиска помощи</p>
+                                </div>
+                                <div class="toggle-switch active">
+                                    <div class="toggle-slider"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="function-item">
+                                <div class="function-icon">📊</div>
+                                <div style="flex: 1;">
+                                    <p style="font-weight: 600; color: #2C2D5F;">Аналитика</p>
+                                    <p style="color: #666; font-size: 12px;">Помогает улучшить приложение</p>
+                                </div>
+                                <div class="toggle-switch">
+                                    <div class="toggle-slider"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <h3 class="section-title" style="margin-top: 32px;">Документы</h3>
+                        
+                        <div class="function-list">
+                            <div class="function-item">
+                                <div class="function-icon">📄</div>
+                                <span style="flex: 1; font-weight: 600; color: #2C2D5F;">Политика конфиденциальности</span>
+                                <span>›</span>
+                            </div>
+                            
+                            <div class="function-item">
+                                <div class="function-icon">📋</div>
+                                <span style="flex: 1; font-weight: 600; color: #2C2D5F;">Условия использования</span>
+                                <span>›</span>
+                            </div>
+                        </div>
+
+                        <div class="alert-box danger" style="margin-top: 24px;">
+                            <strong>⚠️ Удалить все данные</strong><br>
+                            Это действие нельзя отменить. Все ваши данные будут безвозвратно удалены.
+                            <button class="btn btn-outline" style="width: 100%; margin-top: 12px; border-color: #B91717; color: #B91717;" onclick="alert('Функция удаления данных')">
+                                Удалить мои данные
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        
+        function renderHelp() {
+            const faqItems = [
+                {
+                    question: 'Как вызвать волонтера?',
+                    answer: 'Нажмите на красную кнопку SOS на главном экране или выберите "Легкое повреждение" / "Нестабильное состояние" и заполните форму.'
+                },
+                {
+                    question: 'Сколько стоит помощь волонтера?',
+                    answer: 'Помощь волонтеров абсолютно бесплатна. Это волонтерская организация, цель которой - помочь людям в экстренных ситуациях.'
+                },
+                {
+                    question: 'Как стать волонтером?',
+                    answer: 'Свяжитесь с нами по телефону +996 555 000 000 или напишите на email: volunteer@tayan.kg'
+                },
+                {
+                    question: 'Работает ли приложение без интернета?',
+                    answer: 'Основные инструкции по первой помощи доступны офлайн, но для вызова волонтера требуется интернет-соединение.'
+                }
+            ];
+
+            return `
+                <div class="screen active bg-light">
+                    <div class="header">
+                        <div class="header-top">
+                            <button class="back-btn" onclick="navigateTo('settings')">←</button>
+                            <h1 class="header-title">Помощь</h1>
+                        </div>
+                    </div>
+                    
+                    <div class="content">
+                        <h3 class="section-title">Часто задаваемые вопросы</h3>
+                        
+                        ${faqItems.map(item => `
+                            <div class="card mb-3">
+                                <h4 style="font-weight: 600; color: #2C2D5F; margin-bottom: 8px;">❓ ${item.question}</h4>
+                                <p style="color: #666; font-size: 14px; line-height: 1.6;">${item.answer}</p>
+                            </div>
+                        `).join('')}
+
+                        <h3 class="section-title" style="margin-top: 32px;">Связаться с нами</h3>
+                        
+                        <div class="function-list">
+                            <div class="function-item" onclick="window.location.href='tel:+996555000000'">
+                                <div class="function-icon">📞</div>
+                                <div style="flex: 1;">
+                                    <p style="font-weight: 600; color: #2C2D5F;">Телефон</p>
+                                    <p style="color: #666; font-size: 12px;">+996 555 000 000</p>
+                                </div>
+                                <span>›</span>
+                            </div>
+                            
+                            <div class="function-item" onclick="window.location.href='mailto:support@tayan.kg'">
+                                <div class="function-icon">📧</div>
+                                <div style="flex: 1;">
+                                    <p style="font-weight: 600; color: #2C2D5F;">Email</p>
+                                    <p style="color: #666; font-size: 12px;">support@tayan.kg</p>
+                                </div>
+                                <span>›</span>
+                            </div>
+                            
+                            <div class="function-item">
+                                <div class="function-icon">🌐</div>
+                                <div style="flex: 1;">
+                                    <p style="font-weight: 600; color: #2C2D5F;">Веб-сайт</p>
+                                    <p style="color: #666; font-size: 12px;">www.tayan.kg</p>
+                                </div>
+                                <span>›</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        function renderMyRequests() {
+            return `
+                <div class="screen active bg-light">
+                <div class="header">
+                    <div class="header-top">
+                    <button class="back-btn" onclick="navigateTo('home')">←</button>
+                    <h1 class="header-title">Мои обращения</h1>
+                    </div>
+                </div>
+
+                <div class="content">
+                    <div id="myRequestsList" class="function-list"></div>
+                </div>
+                </div>
+            `;
+        }
+        function renderRequestDetail() {
+            return `
+                <div class="screen active bg-light">
+                <div class="header">
+                    <div class="header-top">
+                    <button class="back-btn" onclick="navigateTo('myRequests')">←</button>
+                    <h1 class="header-title">Детали обращения</h1>
+                    </div>
+                </div>
+
+                <div class="content">
+                    <div id="requestDetailBox" class="card">Загрузка...</div>
+                </div>
+                </div>
+            `;
+        }
+
+
+
+        function renderCategories() {
+            const categories = Object.keys(categoriesData).map(key => ({
+                id: key,
+                ...categoriesData[key]
+            }));
+
+            return `
+                <div class="screen active bg-light">
+                    <div class="header">
+                        <div class="header-top">
+                            <button class="back-btn" onclick="navigateTo('home')">←</button>
+                            <h1 class="header-title">Категории помощи</h1>
+                        </div>
+                    </div>
+                    
+                    <div class="content">
+                        <div class="card-grid">
+                            ${categories.map(cat => `
+                                <div class="category-card" onclick="selectCategory('${cat.id}')" style="background: linear-gradient(135deg, ${cat.color}, ${cat.color}88);">
+                                    <div class="category-icon" style="background: rgba(0,0,0,0.1);">${cat.icon}</div>
+                                    <span style="text-align: center; font-weight: 600; color: #2C2D5F; white-space: pre-line;">${cat.title}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        
+        function renderCategoryDetail() {
+            const category = categoriesData[appState.selectedCategory];
+            if (!category) return '';
+
+            return `
+                <div class="screen active">
+                    <div class="header">
+                        <div class="header-top">
+                            <button class="back-btn" onclick="navigateTo('categories')">←</button>
+                            <h1 class="header-title">${category.title}</h1>
+                        </div>
+                    </div>
+                    
+                    <div class="content">
+                        <div class="alert-box danger">
+                            ⚠️ <strong>Внимание:</strong> При серьезных случаях немедленно вызывайте скорую помощь (103 или 112)!
+                        </div>
+                        
+                        <h3 class="section-title">Пошаговая инструкция</h3>
+                        
+                        <div class="step-list">
+                            ${category.steps.map((step, index) => `
+                                <div class="step-item">
+                                    <div class="step-number">${index + 1}</div>
+                                    <p style="flex: 1; color: #2C2D5F; font-size: 14px;">${step}</p>
+                                </div>
+                            `).join('')}
+                        </div>
+                        
+                        <button class="btn btn-danger" style="width: 100%; margin-top: 24px;" onclick="window.location.href='tel:103'">
+                            📞 Вызвать скорую помощь (103)
+                        </button>
+                        
+                        <button class="btn btn-primary" style="width: 100%; margin-top: 12px;" onclick="navigateTo('volunteer-map')">
+                            🚑 Вызвать волонтера
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        
+        function renderVideo() {
+            return `
+                <div class="screen active bg-light">
+                    <div class="header">
+                        <div class="header-top">
+                            <button class="back-btn" onclick="navigateTo('home')">←</button>
+                            <h1 class="header-title">Видео-инструкции</h1>
+                        </div>
+                    </div>
+                    
+                    <div class="content">
+                        <div class="video-grid">
+                            ${videosData.map((v, index) => `
+                                <div class="video-card" onclick="selectVideo(${v.id})">
+                                    <div class="video-thumbnail" style="background: linear-gradient(135deg, ${v.color} 0%, ${v.color}88 100%); display: flex; align-items: center; justify-content: center;">
+                                        <div style="width: 48px; height: 48px; border-radius: 50%; background: rgba(255,255,255,0.9); display: flex; align-items: center; justify-content: center; font-size: 20px;">▶</div>
+                                        <div style="position: absolute; bottom: 12px; left: 12px; background: rgba(0,0,0,0.6); color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px;">${v.duration}</div>
+                                    </div>
+                                    <div style="padding: 12px;">
+                                        <p style="font-weight: 600; color: #2C2D5F; font-size: 14px;">${v.title}</p>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        
+        function renderVideoDetail() {
+            const video = videosData.find(v => v.id === appState.selectedVideoId);
+            if (!video) return '';
+
+            return `
+                <div class="screen active">
+                    <div class="header">
+                        <div class="header-top">
+                            <button class="back-btn" onclick="navigateTo('video')">←</button>
+                            <h1 class="header-title">Видео</h1>
+                        </div>
+                    </div>
+                    
+                    <div style="background: ${video.color}; height: 300px; display: flex; align-items: center; justify-content: center;">
+                        <div style="width: 80px; height: 80px; border-radius: 50%; background: rgba(255,255,255,0.9); display: flex; align-items: center; justify-content: center; font-size: 32px; cursor: pointer;">▶</div>
+                    </div>
+                    
+                    <div class="content">
+                        <h2 style="font-family: 'Inter'; font-size: 22px; color: #2C2D5F; margin-bottom: 16px;">${video.title}</h2>
+                        
+                        <div style="display: flex; gap: 16px; margin-bottom: 24px;">
+                            <span style="background: #F5F5F8; padding: 8px 16px; border-radius: 20px; font-size: 14px; color: #666;">
+                                ⏱️ ${video.duration}
+                            </span>
+                            <span style="background: #F5F5F8; padding: 8px 16px; border-radius: 20px; font-size: 14px; color: #666;">
+                                👁️ 2.5K просмотров
+                            </span>
+                        </div>
+                        
+                        <div class="alert-box info">
+                            📺 <strong>Внимание:</strong> Это демо-версия. В полной версии приложения здесь будет реальное видео с инструкциями по оказанию первой помощи.
+                        </div>
+                        
+                        <h3 class="section-title">Описание</h3>
+                        <p style="color: #666; line-height: 1.6; margin-bottom: 24px;">
+                            В этом видео вы узнаете подробные инструкции по оказанию первой помощи. 
+                            Видео создано профессиональными медиками и содержит пошаговые действия.
+                        </p>
+                        
+                        <button class="btn btn-primary" style="width: 100%;" onclick="alert('Видео воспроизводится...')">
+                            ▶ Воспроизвести видео
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        
+        function renderMap() {
+            return `
+                <div class="screen active">
+                    <div class="header">
+                        <div class="header-top">
+                            <button class="back-btn" onclick="navigateTo('home')">←</button>
+                            <h1 class="header-title">Карта больниц</h1>
+                        </div>
+                        <div id="hmStatus" style="margin-top:8px;"></div>
+                    </div>
+
+                    <div style="height:360px;">
+                        <div id="hmLeaflet" style="width:100%; height:100%;"></div>
+                    </div>
+
+                    <div class="content bg-light">
+                        <h3 class="section-title">Ближайшие</h3>
+                        <div id="hmList" class="function-list"></div>
+                    </div>
+                </div>
+            `;
+        }
+
+
+        
+        function renderVolunteerMap() {
+            return `
+                <div class="screen active">
+                <div class="header">
+                    <div class="header-top">
+                    <button class="back-btn" onclick="navigateTo('home')">←</button>
+                    <h1 class="header-title">Карта заявки</h1>
+                    </div>
+                    <div id="vmStatus" style="margin-top:8px;"></div>
+                    <div id="vmEta" style="margin-top:8px;"></div>
+                </div>
+
+                <div style="height:360px;">
+                    <div id="vmLeaflet" style="width:100%; height:100%;"></div>
+                </div>
+
+                <div class="content">
+                    <div id="vmBox" class="card">Загрузка заявки…</div>
+                    <div id="vmActions" style="margin-top:12px;"></div>
+                </div>
+                </div>
+            `;
+        }
+
+
+
+
+
+
+
+
+        
+        function renderChat() {
+            return `
+                <div class="screen active">
+                    <div class="header">
+                        <div class="header-top">
+                            <button class="back-btn" onclick="navigateTo('home')">←</button>
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div style="width: 40px; height: 40px; background: rgba(255,255,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center;">🤖</div>
+                                <div>
+                                    <h1 class="header-title" style="font-size: 18px; margin: 0;">AI-помощник</h1>
+                                    <p style="color: rgba(255,255,255,0.7); font-size: 12px;">Онлайн</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div style="display: flex; flex-direction: column; flex: 1; min-height: 0;">
+                        <div class="chat-messages" id="chatMessages">
+                            ${appState.chatMessages.map(msg => `
+                                <div class="chat-message ${msg.type}">${msg.text}</div>
+                            `).join('')}
+                        </div>
+                        
+                        <div style="padding: 16px; background: white; border-top: 1px solid #e5e5e5;">
+                            <div style="display: flex; gap: 8px;">
+                                <input type="text" id="chatInput" class="input-field" placeholder="Введите ваш вопрос..." style="flex: 1; margin: 0;">
+                                <button class="btn btn-primary" style="padding: 12px 24px;" onclick="sendChatMessage()">📤</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        
+        function renderReviews() {
+            return `
+                <div class="screen active bg-light">
+                    <div class="header">
+                        <div class="header-top" style="margin-bottom: 16px;">
+                            <button class="back-btn" onclick="navigateTo('home')">←</button>
+                            <h1 class="header-title">Отзывы</h1>
+                        </div>
+
+                        <div id="reviewsStatsBox" class="card"
+                            style="background: rgba(255,255,255,0.1); border: none;">
+                            <p style="color: rgba(255,255,255,0.7);">Загрузка статистики…</p>
+                        </div>
+                    </div>
+
+                    <div class="content">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                            <h3 class="section-title" style="margin:0;">Отзывы пользователей</h3>
+                            <span style="color:#999;font-size:13px;">
+                                Оставить отзыв можно после завершённой заявки
+                            </span>
+                        </div>
+
+                        <div id="latestReviewsList" class="function-list"></div>
+                    </div>
+                </div>
+            `;
+        }
+
+
+        
+        function renderSymptomForm() {
+            return `
+                <div class="screen active">
+                <div class="header">
+                    <div class="header-top">
+                    <button class="back-btn" onclick="navigateTo('home')">←</button>
+                    <h1 class="header-title">Описание состояния</h1>
+                    </div>
+                </div>
+
+                <div class="content">
+                    <div id="symptomBox">
+                    <div class="input-group">
+                        <label class="input-label">Опишите симптомы</label>
+                        <textarea id="symptoms" class="textarea-field" placeholder="Например: боль в груди, головокружение..." required></textarea>
+                    </div>
+
+                    <div class="input-group">
+                        <label class="input-label">Адрес (где вы находитесь)</label>
+                        <input id="address" class="input-field" placeholder="Например: Бишкек, Чуй 148, подъезд 2">
+                    </div>
+
+                    <div class="input-group">
+                        <label class="input-label">Дополнительные комментарии</label>
+                        <textarea id="comments" class="textarea-field" placeholder="Любая дополнительная информация..."></textarea>
+                    </div>
+
+                    <div class="alert-box info">
+                        💡 <strong>Совет:</strong> Будьте максимально точны в описании симптомов.
+                        Это поможет волонтерам оказать вам наилучшую помощь.
+                    </div>
+
+                    <button type="button" id="btnSendRequest" class="btn btn-danger" style="width: 100%;">📤 Отправить запрос</button>
+                    </div>
+                </div>
+                </div>
+            `;
+        }
+
+        async function loadVolunteerMap() {
+            let id = Number(appState.selectedRequestId || loadSelectedRequestId() || 0);
+
+            if (!id) {
+                const st = document.getElementById("vmStatus");
+                const box = document.getElementById("vmBox");
+
+                if (st) st.innerHTML = `<p style="color:white;font-weight:700;margin:0;">Загрузка заявки…</p>`;
+                if (box) box.innerHTML = `<div class="alert-box info">⏳ Ищем активную заявку…</div>`;
+
+                try {
+                const a = (appState.userRole === "volunteer")
+                    ? await api("/volunteer/active", "GET", null, true)
+                    : await api("/requests/active", "GET", null, true);
+
+                if (a && a.id) {
+                    setSelectedRequestId(a.id);
+                    appState.selectedRequestId = a.id;
+                }
+                } catch (e) {}
+
+                return;
+            }
+
+            let r = await api(`/requests/${id}/track`, "GET", null, true);
+
+            const viewerIsVolunteer = appState.userRole === "volunteer";
+            if (viewerIsVolunteer) {
+                try {
+                const vr = await api(`/volunteer/requests/${id}`, "GET", null, true);
+                r = { ...r, ...vr };
+                } catch (e) {}
+            }
+
+
+
+            const st = document.getElementById("vmStatus");
+            const box = document.getElementById("vmBox");
+
+            
+            const userLat = r.lat;
+            const userLng = r.lng;
+            const volLat = r.volunteer_lat;
+            const volLng = r.volunteer_lng;
+
+            if (userLat == null || userLng == null) {
+                if (st) st.innerHTML = `<p style="color:white;font-weight:700;margin:0;">Координаты пользователя отсутствуют</p>`;
+                if (box) box.innerHTML = `<div class="alert-box danger">Заявка без координат — карту показать нельзя.</div>`;
+                return;
+            }
+
+            vmInitMap(userLat, userLng);
+
+            
+            vmSetUser(userLat, userLng, viewerIsVolunteer ? "Пользователь" : "Вы");
+            if (volLat != null && volLng != null) {
+                vmSetVolunteer(volLat, volLng, viewerIsVolunteer ? "Вы" : (r.volunteer_name || "Волонтёр"));
+            }
+
+            vmFitOnce(userLat, userLng, volLat, volLng);
+
+            if (volLat != null && volLng != null && (r.status === "accepted" || r.status === "in_progress")) {
+                vmDrawRoute(userLat, userLng, volLat, volLng);
+            } else {
+                const etaEl = document.getElementById("vmEta");
+                if (etaEl) etaEl.innerHTML = ``;
+            }
+
+
+            const contactName = viewerIsVolunteer ? (r.user_name || "Пользователь") : (r.volunteer_name || "Волонтёр");
+            const contactPhone = viewerIsVolunteer ? r.user_phone : r.volunteer_phone;
+
+
+            if (st) {
+                st.innerHTML = `
+                    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
+                        <div>
+                            <p style="margin:0;color:rgba(255,255,255,.7);font-size:12px;">
+                                ${r.kind === "sos" ? "🚨 SOS" : "🩹 Симптомы"} • заявка #${r.id}
+                            </p>
+                            <p style="margin:0;color:white;font-weight:800;font-size:16px;">
+                                Статус: ${r.status}
+                            </p>
+                        </div>
+                        <div style="text-align:right;">
+                            <p style="margin:0;color:rgba(255,255,255,.7);font-size:12px;">Создано</p>
+                            <p style="margin:0;color:white;font-weight:700;font-size:12px;">${fmtLocal(r.created_at)}</p>
+                        </div>
+                    </div>
+                `;
+            }
+
+            
+            const routeBtn = `
+                <button class="btn btn-primary" style="width:100%; margin-top:10px;"
+                    onclick="vmOpenRoute(${userLat}, ${userLng}, ${volLat ?? "null"}, ${volLng ?? "null"}, ${JSON.stringify(r.address || "")})">
+                    🗺️ Открыть маршрут
+                </button>
+            `;
+
+
+            const contactCard = contactPhone ? `
+                <div class="alert-box info" style="margin-top:12px;">
+                    <strong>${viewerIsVolunteer ? "Контакт пользователя" : "Контакт волонтёра"}</strong><br>
+                    ${contactName ? `👤 ${contactName}<br>` : ``}
+                    📞 ${contactPhone}<br>
+                    <button class="btn btn-primary" style="width:100%; margin-top:10px;"
+                        onclick="window.location.href='tel:${contactPhone}'">
+                        📞 Позвонить
+                    </button>
+                </div>
+            ` : `
+                <div class="alert-box info" style="margin-top:12px;">
+                    <strong>${viewerIsVolunteer ? "Контакт пользователя" : "Контакт волонтёра"}</strong><br>
+                    <span style="color:#666;">Телефон не указан</span>
+                </div>
+            `;
+
+
+            const locationCard = (r.address || (userLat != null && userLng != null)) ? `
+                <div class="card" style="margin-top:12px;">
+                    <p style="font-weight:700;color:#2C2D5F;margin-bottom:8px;">📍 Где находится пользователь</p>
+                    ${r.address ? `<p style="color:#555;font-size:14px;margin-bottom:6px;"><strong>Адрес:</strong> ${r.address}</p>` : ``}
+                    ${(userLat != null && userLng != null) ? `
+                        <p style="color:#555;font-size:14px;"><strong>Координаты:</strong> ${Number(userLat).toFixed(6)}, ${Number(userLng).toFixed(6)}</p>
+                    ` : ``}
+                </div>
+            ` : ``;
+
+
+            const detailsCard = (r.symptoms || r.comments) ? `
+                <div class="vm-card">
+                    <h4>🩹 Детали</h4>
+                    ${r.symptoms ? `<div class="vm-muted"><strong>Симптомы:</strong>\n${r.symptoms}</div>` : ""}
+                    ${r.comments ? `<div class="vm-muted" style="margin-top:8px;"><strong>Комментарий:</strong>\n${r.comments}</div>` : ""}
+                </div>
+             ` : "";
+
+
+            const timeline = `
+                <div class="card" style="margin-top:12px;">
+                    <p style="font-weight:700;color:#2C2D5F;margin-bottom:8px;">Таймлайн</p>
+                    <p style="color:#666;font-size:13px;">Создано: ${fmtTime(r.created_at)}</p>
+                    ${r.accepted_at ? `<p style="color:#666;font-size:13px;">Принято: ${fmtTime(r.accepted_at)}</p>` : ``}
+                    ${r.in_progress_at ? `<p style="color:#666;font-size:13px;">В пути: ${fmtTime(r.in_progress_at)}</p>` : ``}
+                    ${r.completed_at ? `<p style="color:#666;font-size:13px;">Завершено: ${fmtTime(r.completed_at)}</p>` : ``}
+                    ${r.canceled_at ? `<p style="color:#666;font-size:13px;">Отменено: ${fmtTime(r.canceled_at)}</p>` : ``}
+                </div>
+            `;
+
+            
+            const volActions = (viewerIsVolunteer && !(r.status === "completed" || r.status === "canceled")) ? `
+                <div style="display:flex; gap:8px; margin-top:16px;">
+                    <button type="button" class="btn btn-outline" style="flex:1;" onclick="volSetStatus('in_progress', true)">В пути</button>
+                    <button type="button" class="btn btn-outline" style="flex:1; border-color:#B91717; color:#B91717;" onclick="volSetStatus('canceled', true)">Отменить</button>
+                    <button type="button" class="btn btn-primary" style="flex:1;" onclick="volSetStatus('completed', true)">Завершить</button>
+                </div>
+            ` : ``;
+
+
+            if (box) {
+                box.innerHTML = `
+                    ${contactCard}
+                    ${routeBtn}
+                    ${locationCard}
+                    ${detailsCard}
+                    ${timeline}
+                    ${volActions}
+                `;
+            }
+        }
+
+
+        /*async function loadVolunteerMy() {
+            const items = await api("/volunteer/my", "GET", null, true);
+            const box = document.getElementById("myAcceptedList");
+            if (!box) return;
+
+            if (!items.length) {
+                box.innerHTML = `<div class="card">У вас пока нет принятых заявок.</div>`;
+                return;
+            }
+
+            box.innerHTML = items.map(x => {
+                const created = new Date(x.created_at).getTime();
+                const accepted = x.accepted_at ? new Date(x.accepted_at).getTime() : null;
+
+                const reactionText = accepted ? fmtMinutes(accepted - created) : "—";
+
+                const statusText =
+                    x.status === "accepted" ? "Принята"
+                    : x.status === "in_progress" ? "В пути / в работе"
+                    : x.status === "completed" ? "Завершена"
+                    : x.status === "canceled" ? "Отменена"
+                    : x.status;
+
+                const bg =
+                    x.status === "completed" ? "background:#E8F5E9;border:1px solid #A5D6A7;"
+                    : x.status === "canceled" ? "background:#FFEBEE;border:1px solid #EF9A9A;"
+                    : x.status === "in_progress" ? "background:#E3F2FD;border:1px solid #90CAF9;"
+                    : "";
+
+                return `
+                    <div class="function-item" style="${bg}" onclick="openVolunteerRequest(${x.id})">
+                        <div class="function-icon">${x.kind === "sos" ? "🚨" : "🩹"}</div>
+                        <div style="flex:1;">
+                            <p style="font-weight:600;color:#2C2D5F;">
+                                ${x.kind === "sos" ? "SOS" : "Симптомы"} • ${statusText}
+                            </p>
+
+                            <p style="color:#666;font-size:12px;">
+                                Создано: ${new Date(x.created_at).toLocaleString()}
+                            </p>
+
+                            <p style="color:#666;font-size:12px;">
+                                Реакция: <strong>${reactionText}</strong>
+                            </p>
+
+                            ${x.accepted_at ? `<p style="color:#666;font-size:12px;">Принято: ${fmtTime(x.accepted_at)}</p>` : ``}
+                            ${x.in_progress_at ? `<p style="color:#666;font-size:12px;">В пути: ${fmtTime(x.in_progress_at)}</p>` : ``}
+                            ${x.completed_at ? `<p style="color:#666;font-size:12px;">Завершено: ${fmtTime(x.completed_at)}</p>` : ``}
+                            ${x.canceled_at ? `<p style="color:#666;font-size:12px;">Отменено: ${fmtTime(x.canceled_at)}</p>` : ``}
+                        </div>
+                        <span>›</span>
+                    </div>
+                `;
+            }).join("");
+        }*/
+
+        async function loadMyRequests() {
+            const items = await api("/requests/my", "GET", null, true);
+            const box = document.getElementById("myRequestsList");
+            if (!box) return;
+
+            if (!items.length) {
+                box.innerHTML = `<div class="card">Пока нет обращений.</div>`;
+                return;
+            }
+
+            box.innerHTML = items.map(x => {
+                const bg =
+                    x.status === "completed"
+                    ? "background:#E8F5E9;border:1px solid #A5D6A7;"
+                    : x.status === "canceled"
+                    ? "background:#FFEBEE;border:1px solid #EF9A9A;"
+                    : "";
+
+                const statusText =
+                    x.status === "new" ? "Новая"
+                    : x.status === "accepted" ? "Принята"
+                    : x.status === "in_progress" ? "В работе"
+                    : x.status === "completed" ? "Завершено"
+                    : x.status === "canceled" ? "Отменено"
+                    : x.status;
+
+                return `
+                    <div class="function-item" style="${bg}" onclick="openRequest(${x.id})">
+                    <div class="function-icon">
+                        ${x.status === "completed" ? "✅" : x.status === "canceled" ? "❌" : x.kind === "sos" ? "🚨" : "🩹"}
+                    </div>
+                    <div style="flex:1;">
+                        <p style="font-weight:600;color:#2C2D5F;">
+                        ${x.kind === "sos" ? "SOS" : "Симптомы"} • ${statusText}
+                        </p>
+                        <p style="color:#666;font-size:12px;">
+                        ${fmtLocal(x.created_at)}
+                        </p>
+                    </div>
+                    <span>›</span>
+                    </div>
+                `;
+                }).join("");
+
+        }
+
+        async function loadLatestReviews() {
+            const items = await api("/reviews/latest?limit=30", "GET", null, false);
+            const box = document.getElementById("latestReviewsList");
+            if (!box) return;
+
+            if (!items.length) {
+                box.innerHTML = `<div class="card">Пока нет отзывов.</div>`;
+                return;
+            }
+
+            box.innerHTML = items.map(x => `
+                <div class="review-card">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:12px;">
+                        <div style="display:flex; gap:12px;">
+                            <div style="width:48px;height:48px;border-radius:50%;background:rgba(44,45,95,0.1);display:flex;align-items:center;justify-content:center;">👤</div>
+                            <div>
+                                <p style="font-weight:600; color:#2C2D5F;">${x.user_name || ("Пользователь #" + x.user_id)}</p>
+                                <p style="color:#999; font-size:12px;">${fmtLocal(x.reviewed_at)}</p>
+                            </div>
+                        </div>
+                        <span>${"⭐".repeat(x.rating)}</span>
+                    </div>
+
+                    ${x.review_text ? `<p style="color:#555;font-size:14px;margin-bottom:12px;line-height:1.5;">${x.review_text}</p>` : ``}
+
+                    <div style="background:#F5F5F8;border:1px solid #e5e5e5;border-radius:12px;padding:12px;display:flex;justify-content:space-between;gap:10px;align-items:center;">
+                        <div>
+                            <p style="color:#999; font-size:12px;">Волонтёр</p>
+                            <p style="color:#2C2D5F; font-weight:700; font-size:14px;">${x.volunteer_name || ("ID " + x.volunteer_id)}</p>
+                        </div>
+                        <button class="btn btn-primary" style="padding:10px 14px;" onclick="openVolunteerProfile(${x.volunteer_id}, '${x.volunteer_name || "Волонтёр"}')">
+                            Профиль
+                        </button>
+                    </div>
+                </div>
+            `).join("");
+        }
+
+
+
+        async function syncActiveRequestForHome() {
+            try {
+                if (appState.userRole === "volunteer") {
+                const a = await api("/volunteer/active", "GET", null, true);
+                if (a && a.id) {
+                    setSelectedRequestId(a.id);
+                    appState.hasActiveRequest = true;
+                    appState.activeRequestStatus = a.status || "accepted";
+                } else {
+                    clearSelectedRequestId();
+                    appState.hasActiveRequest = false;
+                    appState.activeRequestStatus = "";
+                }
+                return;
+                }
+
+                const a = await api("/requests/active", "GET", null, true);
+                if (a && a.id) {
+                setSelectedRequestId(a.id);
+                appState.hasActiveRequest = true;
+                appState.activeRequestStatus = a.status || "new";
+                } else {
+                clearSelectedRequestId();
+                appState.hasActiveRequest = false;
+                appState.activeRequestStatus = "";
+                }
+            } catch (e) {
+                clearSelectedRequestId();
+                appState.hasActiveRequest = false;
+                appState.activeRequestStatus = "";
+            }
+        }
+
+
+        function openVolunteerProfile(volunteerId, name = "Волонтёр") {
+            appState.selectedVolunteerId = volunteerId;
+            appState.selectedVolunteerName = name;
+            navigateTo("volunteer-profile");
+        }
+
+        /*async function loadVolunteerMap() {
+            const id = appState.selectedRequestId;
+            if (!id) throw new Error("Нет id заявки");
+
+            const r = await api(`/requests/${id}/track`, "GET", null, true);
+
+            console.log("REQUEST:", r);
+
+
+            const st = document.getElementById("vmStatus");
+            const isVolunteer = appState.userRole === "volunteer";
+
+            let text = "⏳ Ищем волонтёра…";
+            if (r.status === "accepted") text = isVolunteer ? "✅ Вы приняли заявку" : "✅ Волонтёр принял заявку";
+            if (r.status === "in_progress") text = isVolunteer ? "🚗 Вы в пути" : "🚗 Волонтёр в пути";
+            if (r.status === "completed") text = "🏁 Заявка завершена";
+            if (r.status === "canceled") text = "❌ Заявка отменена";
+
+
+            const box = document.getElementById("vmBox");
+
+            let userLat = r.lat ?? appState.lastRequestLat;
+            let userLng = r.lng ?? appState.lastRequestLng;
+
+            if (userLat == null || userLng == null) {
+                if (r.address) {
+                    try {
+                        const g = await geocodeAddress(r.address);
+                        if (g) {
+                            userLat = g.lat;
+                            userLng = g.lng;
+                        }
+                    } catch (e) {}
+                }
+            }
+
+            if (userLat == null || userLng == null) {
+                if (box) box.innerHTML = `📍 Нет координат. Укажите адрес: <strong>${r.address || "—"}</strong>`;
+                vmInitMap(42.8746, 74.5698);
+                vmSetUser(42.8746, 74.5698, "Бишкек (пример)");
+                return;
+            }
+
+            vmInitMap(userLat, userLng);
+            vmSetUser(userLat, userLng, "Вы здесь");
+
+            const volLat = r.volunteer_lat ?? null;
+            const volLng = r.volunteer_lng ?? null;
+
+            if (volLat != null && volLng != null) {
+                vmSetVolunteer(volLat, volLng, r.volunteer_name || "Волонтёр");
+            } else {
+                if (vmVolMarker && vmMap) {
+                    vmMap.removeLayer(vmVolMarker);
+                    vmVolMarker = null;
+                }
+            }
+
+            vmFitOnce(userLat, userLng, volLat, volLng);
+            vmDrawRoute(userLat, userLng, volLat, volLng);
+
+
+            if (box) {
+                const row = (icon, title, value) => `
+                    <div style="background:#F6F7FB;padding:10px 12px;border-radius:12px;">
+                    <div style="display:flex;gap:10px;align-items:flex-start;">
+                        <div style="width:22px;flex:0 0 22px;opacity:.9;">${icon}</div>
+                        <div style="flex:1;">
+                        <div style="font-weight:700;color:#2C2D5F;margin-bottom:2px;">${title}</div>
+                        <div style="color:#444;line-height:1.35;white-space:pre-line;">${value}</div>
+                        </div>
+                    </div>
+                    </div>
+                `;
+
+                box.innerHTML = `
+
+                    
+                    <div style="display:flex;flex-direction:column;gap:10px;">
+
+                    ${row("📌", "Статус", r.status)}
+
+                    ${r.address ? row("📍", "Адрес", r.address) : ""}
+
+                    ${r.symptoms ? row("🩹", "Симптомы", r.symptoms) : ""}
+
+                    ${r.comments ? row("💬", "Комментарий", r.comments) : ""}
+
+                    ${(r.volunteer_name || r.volunteer_phone) ? `
+                        <div style="background:#F6F7FB;padding:10px 12px;border-radius:12px;">
+                        <div style="font-weight:700;color:#2C2D5F;margin-bottom:8px;">🧑‍⚕️ Волонтёр</div>
+
+                        ${r.volunteer_name ? `
+                            <div style="display:flex;gap:10px;align-items:center;color:#444;margin-bottom:6px;">
+                                <div style="width:22px;">👤</div>
+                                <div><strong>${r.volunteer_name}</strong></div>
+                            </div>
+                        ` : ""}
+
+                        ${r.volunteer_phone ? `
+                            <div style="display:flex;gap:10px;align-items:center;color:#444;">
+                                <div style="width:22px;">📞</div>
+                                <div>${r.volunteer_phone}</div>
+                            </div>
+
+                            <button class="btn btn-primary"
+                                style="width:100%; margin-top:10px;"
+                                onclick="callPhone('${String(r.volunteer_phone).replace(/'/g,"\\'")}')">
+                                📞 Позвонить волонтёру
+                            </button>
+                        ` : ""}
+                        </div>
+
+                        ${(r.user_name || r.user_phone) ? `
+                            <div style="background:#F6F7FB;padding:10px 12px;border-radius:12px;">
+                                <div style="font-weight:700;color:#2C2D5F;margin-bottom:8px;">👤 Пользователь</div>
+
+                                ${r.user_name ? `
+                                <div style="display:flex;gap:10px;align-items:center;color:#444;margin-bottom:6px;">
+                                    <div style="width:22px;">👤</div>
+                                    <div><strong>${r.user_name}</strong></div>
+                                </div>
+                                ` : ""}
+
+                                ${r.user_phone ? `
+                                <div style="display:flex;gap:10px;align-items:center;color:#444;">
+                                    <div style="width:22px;">📞</div>
+                                    <div>${r.user_phone}</div>
+                                </div>
+
+                                <button class="btn btn-primary"
+                                    style="width:100%; margin-top:10px;"
+                                    onclick="callPhone('${String(r.user_phone).replace(/'/g,"\\'")}')">
+                                    📞 Позвонить пользователю
+                                </button>
+                                ` : ""}
+                            </div>
+                         ` : ""}
+
+                    ` : ""}
+
+                    </div>
+                `;
+                }
+
+                const actions = document.getElementById("vmActions");
+                if (actions) {
+                    actions.innerHTML = `
+                        <button class="btn btn-outline" style="width:100%; margin-bottom:10px;" onclick="vmFocusAll()">
+                            📌 Показать на карте
+                        </button>
+
+                        <button class="btn btn-primary" style="width:100%;" onclick="vmDrawRoute(${userLat},${userLng},${volLat ?? "null"},${volLng ?? "null"})">
+                            🧭 Показать маршрут на карте
+                        </button>
+
+                    `;
+                }
+
+                const etaBox = document.getElementById("vmEta");
+
+                if (etaBox && volLat != null && volLng != null && r.status === "in_progress") {
+                const eta = await osrmEta(volLat, volLng, userLat, userLng);
+                if (eta) {
+                    etaBox.innerHTML = `
+                    <div class="alert-box info">
+                        📍 ${eta.minutes} мин • ${eta.km} км
+                    </div>
+                    `;
+                }
+            }
+
+
+        }*/
+
+
+
+
+
+
+        async function loadVolunteerProfile() {
+            const volunteerId = appState.selectedVolunteerId;
+
+            const rating = await api(`/volunteer/${volunteerId}/rating`, "GET", null, false);
+            const reviews = await api(`/volunteer/${volunteerId}/reviews?limit=50&offset=0`, "GET", null, false);
+
+            const rbox = document.getElementById("volunteerHeader");
+            const list = document.getElementById("volunteerReviewsList");
+
+            if (rbox) {
+                const avg = (rating.avg_rating || 0).toFixed(1);
+
+                rbox.innerHTML = `
+                    <div style="display:flex; gap:16px; align-items:center;">
+                        <div style="width:64px;height:64px;border-radius:50%;background:rgba(44,45,95,0.1);display:flex;align-items:center;justify-content:center;font-size:28px;">
+                            👤
+                        </div>
+
+                        <div style="flex:1;">
+                            <h2 style="margin:0;color:#2C2D5F;">
+                                ${appState.selectedVolunteerName}
+                            </h2>
+
+
+                            <div style="display:flex;align-items:center;gap:8px;margin-top:4px;">
+                                <span style="font-weight:700;font-size:18px;">
+                                    ${avg}
+                                </span>
+                                <span style="font-size:18px;">
+                                    ${renderStars(rating.avg_rating)}
+                                </span>
+                            </div>
+
+                            <p style="color:#666;font-size:13px;margin-top:4px;">
+                                ${rating.reviews_count || 0} отзывов
+                            </p>
+                        </div>
+                        <div class="volunteer-badges">
+                            <span class="badge blue">Проверенный</span>
+                            <span class="badge green">Первая помощь</span>
+                            <span class="badge gray">Бишкек</span>
+                        </div>
+
+                        <div class="volunteer-actions">
+                            <button class="icon-btn outline">💬</button>
+                            <button class="icon-btn primary">🔗</button>
+                        </div>
+
+                    </div>
+                `;
+            }
+
+
+            if (list) {
+                if (!reviews.length) {
+                    list.innerHTML = `<div class="card">Пока нет отзывов по этому волонтёру.</div>`;
+                    return;
+                }
+
+                list.innerHTML = reviews.map(x => `
+                    <div class="review-card">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                            <div>
+                                <p style="font-weight:700; color:#2C2D5F;">${x.user_name || ("Пользователь #" + x.user_id)}</p>
+                                <p style="color:#999; font-size:12px;">${fmtLocal(x.reviewed_at)}</p>
+                            </div>
+                            <span>${renderStars(x.rating)}</span>
+                        </div>
+                        ${x.review_text ? `<p style="color:#555;font-size:14px;line-height:1.5;">${x.review_text}</p>` : `<p style="color:#999;font-size:13px;">(без комментария)</p>`}
+                    </div>
+                `).join("");
+            }
+        }
+
+
+
+        
+        function attachEvents(screen) {
+            if (screen === "auth") {
+                const btn = document.getElementById("btnRegister");
+                if (btn) btn.onclick = async () => {
+                    const name = document.getElementById("name").value.trim();
+                    const email = document.getElementById("email").value.trim();
+                    const phone = document.getElementById("phone").value.trim();
+                    const password = document.getElementById("password").value;
+                    const role = document.getElementById("role").value;
+
+                    try {
+                    const res = await api("/auth/register", "POST", { name, email, phone, password, role }, false);
+                    localStorage.setItem("token", res.access_token);
+
+                    const me = await api("/auth/me", "GET", null, true);
+                    appState.userName = me.name;
+                    appState.userEmail = me.email || "";
+                    appState.userPhone = me.phone;
+                    appState.userRole = me.role || role;
+
+                    navigateTo("home");
+                    } catch (err) {
+                    alert("Ошибка регистрации: " + err.message);
+                    }
+                };
+            }
+
+
+            
+            if (screen === "login") {
+                const btn = document.getElementById("btnLogin");
+                if (btn) btn.onclick = async () => {
+                    const phone = document.getElementById("loginPhone").value.trim();
+                    const password = document.getElementById("loginPassword").value;
+
+                    try {
+                    const res = await api("/auth/login", "POST", { phone, password }, false);
+                    localStorage.setItem("token", res.access_token);
+
+                    const me = await api("/auth/me", "GET", null, true);
+                    appState.userName = me.name;
+                    appState.userEmail = me.email || "";
+                    appState.userPhone = me.phone;
+                    appState.userRole = me.role || "user";
+
+                    navigateTo("home");
+                    } catch (err) {
+                    alert("Ошибка входа: " + err.message);
+                    }
+                };
+            }
+
+
+            if (screen === "home") {
+                if (homeRefreshLock) return;
+                homeRefreshLock = true;
+
+                (async () => {
+                    try {
+                    await syncActiveRequestForHome();
+                    renderScreen("home");
+                    } finally {
+                    setTimeout(() => { homeRefreshLock = false; }, 0);
+                    }
+                })();
+            }
+
+
+
+
+            if (screen === 'volunteer-open') {
+                startPolling(async () => {
+                    try {
+                        await loadVolunteerOpen();
+                    } catch (e) {
+                        stopPolling();
+                        alert("Нет доступа или ошибка: " + e.message);
+                        navigateTo("home");
+                    }
+                }, 10000);
+            }
+
+
+            if (screen === 'volunteer-my') {
+                startPolling(async () => {
+                    try {
+                        await loadVolunteerMy();
+                    } catch (e) {
+                        stopPolling();
+                        alert("Ошибка: " + e.message);
+                        navigateTo("home");
+                    }
+                }, 10000);
+            }
+
+            if (screen === 'volunteer-request') {
+                (async () => {
+                    try {
+                        const id = appState.selectedRequestId;
+                        const r = await api(`/volunteer/requests/${id}`, "GET", null, true);
+
+                        const box = document.getElementById("volunteerRequestBox");
+
+                        const closed = r.status === "completed" || r.status === "canceled";
+
+                        box.innerHTML = `
+                            <h3 style="color:#2C2D5F;margin-bottom:8px;">
+                                ${r.kind === "sos" ? "🚨 SOS" : "🩹 Симптомы"} • ${r.status}
+                            </h3>
+
+                            <p style="color:#666;font-size:13px;margin-bottom:12px;">
+                                ${fmtLocal(r.created_at)}
+                            </p>
+                            ${r.user_phone ? `
+                                <div class="alert-box info" style="margin-top:12px;">
+                                    <strong>Контакт пользователя</strong><br>
+                                    ${r.user_name ? `👤 ${r.user_name}<br>` : ""}
+                                    📞 ${r.user_phone}<br>
+                                    <button class="btn btn-primary" style="width:100%; margin-top:10px;" onclick="window.location.href='tel:${r.user_phone}'">
+                                        📞 Позвонить пользователю
+                                    </button>
+                                </div>
+                            ` : ""}
+
+                            ${(r.lat != null && r.lng != null) ? `
+                                <button class="btn btn-primary" style="width:100%; margin-top:10px;"
+                                    onclick="window.open('https://www.google.com/maps?q=${r.lat},${r.lng}', '_blank')">
+                                    🗺️ Открыть маршрут (по GPS)
+                                </button>
+                            ` : (r.address ? `
+                                <button class="btn btn-primary" style="width:100%; margin-top:10px;"
+                                    onclick="window.open('https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(r.address)}', '_blank')">
+                                    🗺️ Открыть маршрут (по адресу)
+                                </button>
+                            ` : `
+                                <div class="alert-box info" style="margin-top:12px;">
+                                    📍 Адрес/координаты не указаны — маршрут построить нельзя
+                                </div>
+                            `)}
+
+
+
+
+                            ${r.symptoms ? `<p style="margin-bottom:8px;"><strong>Симптомы:</strong><br>${r.symptoms}</p>` : ""}
+                            ${r.comments ? `<p style="margin-bottom:12px;"><strong>Комментарий:</strong><br>${r.comments}</p>` : ""}
+                            <div class="card" style="margin-top:12px;">
+                                <p style="font-weight:600;color:#2C2D5F;margin-bottom:8px;">Таймлайн</p>
+                                <p style="color:#666;font-size:13px;">Создано: ${fmtTime(r.created_at)}</p>
+                                ${r.accepted_at ? `<p style="color:#666;font-size:13px;">Принято: ${fmtTime(r.accepted_at)}</p>` : ``}
+                                ${r.in_progress_at ? `<p style="color:#666;font-size:13px;">В пути: ${fmtTime(r.in_progress_at)}</p>` : ``}
+                                ${r.completed_at ? `<p style="color:#666;font-size:13px;">Завершено: ${fmtTime(r.completed_at)}</p>` : ``}
+                                ${r.canceled_at ? `<p style="color:#666;font-size:13px;">Отменено: ${fmtTime(r.canceled_at)}</p>` : ``}
+                            </div>
+                            ${(r.address || (r.lat != null && r.lng != null)) ? `
+                                <div class="card" style="margin-top:12px;">
+                                    <p style="font-weight:600;color:#2C2D5F;margin-bottom:8px;">📍 Где находится пользователь</p>
+                                    ${r.address ? `<p style="color:#555;font-size:14px;margin-bottom:6px;"><strong>Адрес:</strong> ${r.address}</p>` : ``}
+                                    ${(r.lat != null && r.lng != null) ? `
+                                        <p style="color:#555;font-size:14px;"><strong>Координаты:</strong> ${r.lat.toFixed(6)}, ${r.lng.toFixed(6)}</p>
+                                    ` : ``}
+                                </div>
+                            ` : ``}
+
+
+
+                            ${closed ? `
+                                <div class="alert-box info">Заявка закрыта.</div>
+                            ` : `
+                                <div style="display:flex; gap:8px; margin-top:16px;">
+                                    <button type="button" class="btn btn-outline" style="flex:1;" onclick="volSetStatus('in_progress')">В пути</button>
+                                    <button type="button" class="btn btn-outline" style="flex:1; border-color:#B91717; color:#B91717;" onclick="volSetStatus('canceled')">Отменить</button>
+                                    <button type="button" class="btn btn-primary" style="flex:1;" onclick="volSetStatus('completed')">Завершить</button>
+                                </div>
+                            `}
+                        `;
+                    } catch (e) {
+                        alert("Не удалось загрузить: " + e.message);
+                        navigateTo("volunteer-my");
+                    }
+                })();
+            }
+
+            if (screen === "reviews") {
+                startPolling(async () => {
+                    try {
+                        const stats = await loadReviewsStats();
+                        const box = document.getElementById("reviewsStatsBox");
+
+                        if (box) {
+                            box.innerHTML = `
+                                <div style="display:flex; justify-content:space-between;">
+                                    <div>
+                                        <p style="color:rgba(255,255,255,0.7);font-size:14px;">
+                                            Средняя оценка
+                                        </p>
+                                        <div style="display:flex; align-items:center; gap:8px;">
+                                            <span style="font-size:28px; color:white;">
+                                                ${stats.avg_rating.toFixed(1)}
+                                            </span>
+                                            <span style="font-size:18px;">
+                                                ${renderStars(stats.avg_rating)}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <div style="text-align:right;">
+                                        <p style="color:rgba(255,255,255,0.7);font-size:14px;">
+                                            Всего отзывов
+                                        </p>
+                                        <p style="font-size:28px; color:white;">
+                                            ${stats.reviews_count}
+                                        </p>
+                                    </div>
+                                </div>
+                            `;
+                        }
+
+                        await loadLatestReviews();
+                    } catch (e) {
+                        stopPolling();
+                        alert("Не удалось загрузить отзывы: " + e.message);
+                        navigateTo("home");
+                    }
+                }, 15000);
+            }
+
+
+            if (screen === "volunteer-profile") {
+                (async () => {
+                    try {
+                        await loadVolunteerProfile();
+                    } catch (e) {
+                        alert("Не удалось загрузить профиль: " + e.message);
+                        navigateTo("reviews");
+                    }
+                })();
+            }
+
+            if (screen === "volunteer-map") {
+                startPolling(async () => {
+                    try {
+                    await loadVolunteerMap();
+                    } catch (e) {
+                    const msg = String(e?.message || e);
+
+                    if (msg.includes("Нет выбранной заявки")) {
+                        const st = document.getElementById("vmStatus");
+                        const box = document.getElementById("vmBox");
+                        if (st) st.innerHTML = `<p style="color:white;font-weight:700;margin:0;">Загрузка заявки…</p>`;
+                        if (box) box.innerHTML = `<div class="alert-box info">⏳ Подготавливаем карту…</div>`;
+                        return;
+                    }
+
+                    stopPolling();
+
+                    const box = document.getElementById("vmBox");
+                    const st = document.getElementById("vmStatus");
+                    if (st) st.innerHTML = `<p style="color:white;font-weight:700;margin:0;">Ошибка загрузки заявки</p>`;
+                    if (box) {
+                        box.innerHTML = `
+                        <div class="alert-box danger">
+                            Не удалось загрузить заявку: ${msg}
+                        </div>
+                        <button class="btn btn-primary" style="width:100%; margin-top:12px;" onclick="navigateTo('home')">
+                            ← На главную
+                        </button>
+                        `;
+                    }
+                    }
+
+                }, 7000);
+
+                startVolunteerGeo();
+
+            }
+
+
+
+
+
+
+            
+            if (screen === "symptom-form") {
+                const btn = document.getElementById("btnSendRequest");
+                if (btn) btn.onclick = async () => {
+                    const symptoms = document.getElementById("symptoms").value.trim();
+                    const comments = document.getElementById("comments").value.trim();
+                    const address = (document.getElementById("address").value || "").trim();
+
+                    appState.selectedRequestId = 0;
+                    setSelectedRequestId(0);
+
+                    navigateTo("volunteer-map", "creating request (optimistic)");
+
+                    const st = document.getElementById("vmStatus");
+                    const box = document.getElementById("vmBox");
+
+                    if (st) st.innerHTML = `<p style="color:white;font-weight:800;margin:0;">Отправляем заявку…</p>`;
+                    if (box) box.innerHTML = `
+                        <div class="alert-box info">
+                            ⏳ Создаём заявку и определяем геолокацию…
+                        </div>
+                    `;
+
+                    try {
+                        const geo = await getGeo();
+
+                        const created = await api("/requests", "POST", {
+                            kind: "symptom",
+                            symptoms,
+                            comments,
+                            lat: geo.lat,
+                            lng: geo.lng,
+                            address
+                        }, true);
+
+                        const rid = created?.id || created?.request_id || (created?.request && created.request.id) || 0;
+
+                        setSelectedRequestId(rid);
+                        appState.selectedRequestId = rid;
+
+                        await loadVolunteerMap();
+
+                    } catch (err) {
+                        const st2 = document.getElementById("vmStatus");
+                        const box2 = document.getElementById("vmBox");
+
+                        if (st2) st2.innerHTML = `<p style="color:white;font-weight:800;margin:0;">Ошибка отправки</p>`;
+                        if (box2) box2.innerHTML = `
+                            <div class="alert-box danger">
+                                Не удалось отправить заявку: ${err.message}
+                            </div>
+                            <button class="btn btn-primary" style="width:100%; margin-top:12px;" onclick="navigateTo('symptom-form')">
+                                ← Назад
+                            </button>
+                        `;
+                    }
+                };
+            }
+            if (screen === "map") {
+                (async () => {
+                    const st = document.getElementById("hmStatus");
+                    const listBox = document.getElementById("hmList");
+
+                    if (st) st.innerHTML = `<div class="alert-box info">📍 Получаем геолокацию…</div>`;
+
+                    const geo = await getGeo();
+                    const lat = geo.lat ?? 42.8746;
+                    const lng = geo.lng ?? 74.5698;
+
+                    hmInitMap(lat, lng);
+                    if (geo.lat != null && geo.lng != null) hmSetUser(lat, lng);
+
+                    if (st) st.innerHTML = `<div class="alert-box info">🔎 Ищем ближайшие больницы…</div>`;
+
+                    try {
+                        const items = await fetchNearbyHospitalsOSM(lat, lng, 5000, 30);
+
+                        if (st) st.innerHTML = `<div class="alert-box info">🏥 Найдено: ${items.length}</div>`;
+
+                        hmSetHospitals(items);
+                        hmFitAll(geo.lat, geo.lng, items);
+                        hmRenderList(geo.lat, geo.lng, items);
+
+                    } catch (e) {
+                        if (st) st.innerHTML = `<div class="alert-box danger">❌ Ошибка загрузки больниц</div>`;
+                        if (listBox) listBox.innerHTML = `<div class="card">Ошибка: ${e.message}</div>`;
+                    }
+                })();
+            }
+
+
+
+            if (screen === 'chat') {
+                const input = document.getElementById('chatInput');
+                input.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        sendChatMessage();
+                    }
+                });
+                
+                const chatMessages = document.getElementById('chatMessages');
+                if (chatMessages) {
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                }
+            }
+
+
+
+
+            if (screen === 'myRequests') {
+                startPolling(async () => {
+                    try {
+                        await loadMyRequests();
+                    } catch (e) {
+                        stopPolling();
+                        alert("Не удалось загрузить обращения: " + e.message);
+                        navigateTo("home");
+                    }
+                }, 10000);
+            }
+
+            if (screen === 'requestDetail') {
+                (async () => {
+                    try {
+                    const id = appState.selectedRequestId;
+                    const r = await api(`/requests/${id}`, "GET", null, true);
+                    let vRating = null;
+                    if (r.accepted_by) {
+                    try {
+                        vRating = await api(`/volunteer/${r.accepted_by}/rating`, "GET", null, true);
+                    } catch (e) {}
+                    }
+
+                    const box = document.getElementById("requestDetailBox");
+                    let reaction_minutes = null;
+                    if (r.accepted_at) {
+                        const created = new Date(r.created_at).getTime();
+                        const accepted = new Date(r.accepted_at).getTime();
+                        reaction_minutes = Math.max(0, Math.round((accepted - created) / 60000));
+                    }
+                    box.innerHTML = `
+                        <h3 style="color:#2C2D5F;margin-bottom:8px;">
+                        ${r.kind === "sos" ? "🚨 SOS" : "🩹 Симптомы"} • ${r.status}
+                        </h3>
+                        <p style="color:#666;font-size:13px;margin-bottom:12px;">
+                        ${fmtLocal(r.created_at)}
+                        </p>
+                        ${(r.status === "accepted" || r.status === "in_progress" || r.status === "completed") && (r.volunteer_name || r.volunteer_phone) ? `
+                        <div class="alert-box info" style="margin-top:12px;">
+                            <strong>Волонтёр принял заявку</strong><br>
+                            ${r.volunteer_name ? `👤 ${r.volunteer_name}<br>` : ""}
+                            ${r.volunteer_phone ? `📞 ${r.volunteer_phone}` : ""}
+                            ${vRating ? `
+                                <div style="margin-top:8px;color:#1565C0;">
+                                    ⭐ Рейтинг волонтёра: <strong>${vRating.avg_rating.toFixed(1)}</strong> / 5
+                                    <span style="color:#666;">(${vRating.reviews_count} отзывов)</span>
+                                </div>
+                            ` : ``}
+                            ${r.accepted_by ? `
+                                <button class="btn btn-primary"
+                                    style="width:100%; margin-top:10px;"
+                                    onclick="openVolunteerProfile(${r.accepted_by}, '${(r.volunteer_name || "Волонтёр").replace(/'/g, "\\'")}')">
+                                    ⭐ Профиль волонтёра
+                                </button>
+                            ` : ``}
+                        </div>
+                    ` : ""}
+
+                    ${(r.address || (r.lat != null && r.lng != null)) ? `
+                        <div class="card" style="margin-top:12px;">
+                            <p style="font-weight:600;color:#2C2D5F;margin-bottom:8px;">📍 Местоположение</p>
+                            ${r.address ? `<p style="color:#555;font-size:14px;margin-bottom:6px;"><strong>Адрес:</strong> ${r.address}</p>` : ``}
+                            ${(r.lat != null && r.lng != null) ? `
+                                <p style="color:#555;font-size:14px;"><strong>Координаты:</strong> ${r.lat.toFixed(6)}, ${r.lng.toFixed(6)}</p>
+                            ` : ``}
+                        </div>
+                    ` : ``}
+
+
+                        
+                        
+                        ${reaction_minutes != null ? `
+                            <div class="alert-box info" style="margin-top:12px;">
+                                ✅ Волонтёр откликнулся за <strong>${reaction_minutes}</strong> мин.
+                                ${r.volunteer_phone ? `<div style="margin-top:8px;">
+                                <button class="btn btn-primary" style="width:100%;" onclick="window.location.href='tel:${r.volunteer_phone}'">
+                                    📞 Позвонить волонтёру
+                                </button>
+                                </div>` : ``}
+                            </div>
+                            ` : `
+                            <div class="alert-box info" style="margin-top:12px;">
+                                ⏳ Ищем волонтёра… (заявка ещё не принята)
+                            </div>
+                            `}
+                        ${r.symptoms ? `<p style="margin-bottom:8px;"><strong>Симптомы:</strong><br>${r.symptoms}</p>` : ""}
+                        ${r.comments ? `<p style="margin-bottom:12px;"><strong>Комментарий:</strong><br>${r.comments}</p>` : ""}
+
+                        <div class="card" style="margin-top:12px;">
+                            <p style="font-weight:600;color:#2C2D5F;margin-bottom:8px;">Таймлайн</p>
+                            <p style="color:#666;font-size:13px;">Создано: ${fmtLocal(r.created_at)}</p>
+                            ${r.accepted_at ? `<p style="color:#666;font-size:13px;">Принято: ${fmtLocal(r.accepted_at)}</p>` : ``}
+                            ${r.in_progress_at ? `<p style="color:#666;font-size:13px;">В работе: ${fmtLocal(r.in_progress_at)}</p>` : ``}
+                            ${r.completed_at ? `<p style="color:#666;font-size:13px;">Завершено: ${fmtLocal(r.completed_at)}</p>` : ``}
+                            ${r.canceled_at ? `<p style="color:#666;font-size:13px;">Отменено: ${fmtLocal(r.canceled_at)}</p>` : ``}
+                        </div>
+
+                        <div id="userEtaBox"></div>
+
+
+
+                        ${(r.status === "new") ? `
+                            <div style="display:flex; gap:8px; margin-top:16px;">
+                                <button type="button" class="btn btn-outline"
+                                    style="flex:1; border-color:#B91717; color:#B91717;"
+                                    onclick="setRequestStatus('canceled')">
+                                    Отменить
+                                </button>
+                            </div>
+                        ` : ``}
+
+                        
+
+
+
+                            ${(r.status === "completed" && r.rating == null) ? `
+                            <div class="card" style="margin-top:12px;">
+                                <p style="font-weight:600;color:#2C2D5F;margin-bottom:8px;">Оцените волонтёра</p>
+
+                                <div class="input-group">
+                                <label class="input-label">Оценка (1–5)</label>
+                                <input id="reviewRating" type="number" min="1" max="5" class="input-field" placeholder="5">
+                                </div>
+
+                                <div class="input-group">
+                                <label class="input-label">Комментарий (необязательно)</label>
+                                <textarea id="reviewText" class="textarea-field" placeholder="Например: приехал быстро, помог..." ></textarea>
+                                </div>
+
+                                <button class="btn btn-primary" style="width:100%;" onclick="submitReview(${r.id})">
+                                ⭐ Отправить отзыв
+                                </button>
+                            </div>
+                            ` : ``}
+
+                            ${(r.status === "completed" && r.rating != null) ? `
+                            <div class="alert-box info" style="margin-top:12px;">
+                                ⭐ Ваш отзыв: <strong>${r.rating}/5</strong><br>
+                                ${r.review_text ? `💬 ${r.review_text}` : ``}
+                            </div>
+                            ` : ``}
+
+                    `;
+                    } catch (e) {
+                    alert("Не удалось загрузить детали: " + e.message);
+                    navigateTo("myRequests");
+                    }
+
+                    const etaBox = document.getElementById("userEtaBox");
+
+                    const userLat = r.lat;
+                    const userLng = r.lng;
+                    const volLat = r.volunteer_lat;
+                    const volLng = r.volunteer_lng;
+
+                    if (etaBox) {
+                    if (userLat != null && userLng != null && volLat != null && volLng != null && (r.status === "accepted" || r.status === "in_progress")) {
+                        etaBox.innerHTML = `<div class="alert-box info">🧭 Считаем время прибытия волонтёра…</div>`;
+                        try {
+                        const eta = await osrmEta(volLat, volLng, userLat, userLng);
+                        if (eta) {
+                            etaBox.innerHTML = `<div class="alert-box info">🚗 Волонтёр будет примерно через <strong>${eta.minutes}</strong> мин • ${eta.km} км</div>`;
+                        } else {
+                            etaBox.innerHTML = `<div class="alert-box info">🚗 Волонтёр в пути (ETA недоступно)</div>`;
+                        }
+                        } catch (e) {
+                        etaBox.innerHTML = `<div class="alert-box info">🚗 Волонтёр в пути (ETA недоступно)</div>`;
+                        }
+                    } else {
+                        etaBox.innerHTML = ``;
+                    }
+                }
+
+                
+                
+            })();
+            
+            startUserEta(appState.selectedRequestId);
+
+
+                
+
+
+            }
+
+
+        }
+
+        
+        function selectCategory(categoryId) {
+            appState.selectedCategory = categoryId;
+            navigateTo('category-detail');
+        }
+
+        function selectVideo(videoId) {
+            appState.selectedVideoId = videoId;
+            navigateTo('video-detail');
+        }
+        
+        async function acceptOpenRequest(id) {
+            console.log("acceptOpenRequest clicked:", id);
+
+            try {
+                const accepted = await api(`/requests/${id}/accept`, "POST", null, true);
+
+                const rid = accepted?.id || accepted?.request_id || accepted?.request?.id || id;
+
+                setSelectedRequestId(rid);
+                appState.selectedRequestId = rid;
+
+                navigateTo("volunteer-map", "accepted from volunteer-open");
+
+                (async () => {
+                    try {
+                        const geo = await getGeo();
+                        if (geo.lat == null || geo.lng == null) return;
+
+                        await api(`/volunteer/requests/${rid}/location`, "PATCH", {
+                            volunteer_lat: geo.lat,
+                            volunteer_lng: geo.lng
+                        }, true);
+                    } catch (e) {
+                        console.warn("Location PATCH failed:", e.message);
+                    }
+                })();
+
+            } catch (e) {
+                alert("Не удалось принять заявку: " + e.message);
+            }
+        }
+
+
+
+
+
+
+
+        
+
+
+        async function showSOS() {
+            if (!confirm('Вы уверены, что хотите отправить экстренный запрос?\n\nБлижайшие волонтеры будут немедленно уведомлены о вашем местоположении.')) return;
+
+            try {
+                const geo = await getGeo();
+                appState.lastRequestLat = geo.lat;
+                appState.lastRequestLng = geo.lng;
+                const address = prompt("Введите адрес (необязательно):", "") || "";
+
+                const created = await api("/requests", "POST", {
+                    kind: "sos",
+                    lat: geo.lat,
+                    lng: geo.lng,
+                    address: address.trim()
+                }, true);
+
+                const rid = created?.id || created?.request_id || (created?.request && created.request.id) || 0;
+                setSelectedRequestId(rid);
+
+
+                console.log("created request id:", appState.selectedRequestId);
+                console.log("token:", getToken());
+
+
+                navigateTo('volunteer-map');
+            } catch (err) {
+                alert("Ошибка SOS: " + err.message);
+            }
+        }
+
+        function zoomMap(direction) {
+            const maps = ['mapImage', 'volunteerMapImage'];
+            maps.forEach(mapId => {
+                const map = document.getElementById(mapId);
+                if (map) {
+                    if (direction === 'in') {
+                        appState.mapZoom = Math.min(appState.mapZoom + 0.2, 2);
+                    } else {
+                        appState.mapZoom = Math.max(appState.mapZoom - 0.2, 0.5);
+                    }
+                    map.style.transform = `scale(${appState.mapZoom})`;
+                }
+            });
+        }
+
+        function getBotResponse(userMessage) {
+            const message = userMessage.toLowerCase().trim();
+            
+            
+            for (const [keyword, response] of Object.entries(botResponses)) {
+                if (keyword !== 'default' && message.includes(keyword)) {
+                    return response;
+                }
+            }
+            
+            return botResponses.default;
+        }
+
+        function sendChatMessage() {
+            const input = document.getElementById('chatInput');
+            if (input && input.value.trim()) {
+                const userMessage = input.value.trim();
+                
+                
+                appState.chatMessages.push({
+                    type: 'user',
+                    text: userMessage
+                });
+                
+                
+                const botMessage = getBotResponse(userMessage);
+                
+                
+                setTimeout(() => {
+                    appState.chatMessages.push({
+                        type: 'bot',
+                        text: botMessage
+                    });
+                    renderScreen('chat');
+                }, 500);
+                
+                input.value = '';
+                renderScreen('chat');
+            }
+        }
+
+        function toggleNotification(type) {
+            appState.notifications[type] = !appState.notifications[type];
+            renderScreen('notifications');
+        }
+
+        function selectLanguage(code) {
+            appState.selectedLanguage = code;
+            renderScreen('language');
+            setTimeout(() => {
+                alert('Язык изменен! Изменения вступят в силу после перезапуска приложения.');
+            }, 300);
+        }
+
+        function logout() {
+            if (confirm('Вы уверены, что хотите выйти из аккаунта?')) {
+                clearToken();
+                appState.userName = '';
+                appState.userEmail = '';
+                appState.userPhone = '';
+                appState.userRole = "user";
+
+
+                navigateTo('auth');
+            }
+        }
+        function openRequest(id) {
+            console.log("openRequest", id);
+            setSelectedRequestId(id);
+            navigateTo("requestDetail");
+
+        }
+
+        function openMyActiveMap() {
+            const id = Number(appState.selectedRequestId || loadSelectedRequestId() || 0);
+            if (!id) {
+                alert("Нет активной заявки. Сначала отправьте запрос (SOS или симптомы).");
+                return;
+            }
+            setSelectedRequestId(id);
+            navigateTo("volunteer-map");
+        }
+
+
+
+
+
+
+        async function setRequestStatus(status) {
+            try {
+                const id = appState.selectedRequestId;
+                await api(`/requests/${id}/status`, "PATCH", { status }, true);
+                navigateTo("myRequests");
+            } catch (e) {
+                alert("Не удалось изменить статус: " + e.message);
+            }
+        }
+        async function submitReview(id) {
+        const ratingRaw = document.getElementById("reviewRating").value;
+        const review_text = (document.getElementById("reviewText").value || "").trim();
+
+        const rating = ratingRaw === "" ? 5 : parseInt(ratingRaw, 10);
+
+        if (!(rating >= 1 && rating <= 5)) {
+            alert("Оценка должна быть от 1 до 5");
+            return;
+        }
+
+        try {
+            await api(`/requests/${id}/review`, "POST", { rating, review_text }, true);
+            alert("Отзыв отправлен ✅");
+            appState.selectedRequestId = id;
+            navigateTo("requestDetail"); 
+        } catch (e) {
+            alert("Ошибка отзыва: " + e.message);
+        }
+        }
+
+
+
+
+
+        
+        function openVolunteerRequest(id) {
+            appState.selectedRequestId = id;
+            navigateTo("volunteer-request");
+        }
+
+        async function volSetStatus(status, stayOnCurrentScreen = false) {
+            try {
+                const id = appState.selectedRequestId;
+                await api(`/volunteer/requests/${id}/status`, "PATCH", { status }, true);
+
+                if (stayOnCurrentScreen) {
+                    if (appState.currentScreen === "volunteer-map") {
+                        await loadVolunteerMap();
+                    } else if (appState.currentScreen === "volunteer-request") {
+                        renderScreen("volunteer-request");
+                    } else {
+                        renderScreen(appState.currentScreen || "home");
+                    }
+                    return;
+                }
+
+                navigateTo("volunteer-my");
+            } catch (e) {
+                alert("Не удалось обновить статус: " + e.message);
+            }
+        }
+
+
+        function fmtTime(dt) {
+            return fmtLocal(dt);
+        }
+
+
+        function fmtMinutes(ms) {
+            const m = Math.round(ms / 60000);
+            if (m <= 0) return "меньше минуты";
+            return m + " мин";
+        }
+        let pollTimer = null;
+
+        function stopPolling() {
+            if (pollTimer) {
+                clearInterval(pollTimer);
+                pollTimer = null;
+            }
+        }
+        function stopUserEta() {
+            if (userEtaTimer) {
+                clearInterval(userEtaTimer);
+                userEtaTimer = null;
+            }
+        }
+
+
+        function startPolling(fn, intervalMs = 10000) {
+            stopPolling();
+
+            const safeRun = async () => {
+                if (pollInFlight) return;
+                pollInFlight = true;
+                try { await fn(); }
+                finally { pollInFlight = false; }
+            };
+
+            safeRun();
+            pollTimer = setInterval(safeRun, intervalMs);
+        }
+
+
+        function renderStars(rating) {
+            const full = Math.floor(rating);
+            const empty = 5 - full;
+            return "★".repeat(full) + "☆".repeat(empty);
+        }
+        
+
+        async function loadReviewsStats() {
+            return await api("/reviews/stats", "GET", null, false);
+        }
+
+
+        function vmInitMap(lat, lng) {
+            if (vmMap) return;
+
+            vmMap = L.map("vmLeaflet", { zoomControl: true }).setView([lat, lng], 15);
+
+            L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+                maxZoom: 19,
+                attribution: "&copy; OpenStreetMap"
+            }).addTo(vmMap);
+
+            setTimeout(() => {
+                if (vmMap) vmMap.invalidateSize(true);
+            }, 100);
+        }
+
+
+        function vmSetUser(lat, lng, text = "Вы") {
+            if (!vmMap) vmInitMap(lat, lng);
+
+            if (!vmUserMarker) {
+                vmUserMarker = L.circleMarker([lat, lng], {
+                radius: 10,
+                weight: 3,
+                fillOpacity: 0.9
+                }).addTo(vmMap);
+            } else {
+                vmUserMarker.setLatLng([lat, lng]);
+            }
+
+            vmUserMarker.bindPopup(`📍 ${text}`);
+        }
+
+        function vmSetVolunteer(lat, lng, name = "Волонтёр") {
+            if (!vmMap) return;
+
+            if (!vmVolMarker) {
+                vmVolMarker = L.circleMarker([lat, lng], {
+                radius: 10,
+                color: "#16a34a",       
+                fillColor: "#22c55e",
+                weight: 3,
+                fillOpacity: 0.9
+                }).addTo(vmMap);
+            } else {
+                vmVolMarker.setLatLng([lat, lng]);
+            }
+
+            vmVolMarker.bindPopup(`🧑‍⚕️ ${name}`);
+        }
+
+        function vmFitOnce(userLat, userLng, volLat, volLng) {
+            const key = `${userLat},${userLng}|${volLat ?? ""},${volLng ?? ""}`;
+            if (vmLastFitKey === key) return;
+
+            if (!vmMap) return;
+
+            if (volLat != null && volLng != null) {
+                const bounds = L.latLngBounds(
+                L.latLng(userLat, userLng),
+                L.latLng(volLat, volLng)
+                );
+                vmMap.fitBounds(bounds, { padding: [30, 30] });
+            } else {
+                vmMap.setView([userLat, userLng], 15);
+            }
+
+            vmLastFitKey = key;
+        }
+
+
+
+        function vmOpenRoute(userLat, userLng, volLat, volLng, address) {
+            if (volLat != null && volLng != null) {
+                window.open(`https://www.google.com/maps/dir/?api=1&origin=${volLat},${volLng}&destination=${userLat},${userLng}`, "_blank");
+                return;
+            }
+
+
+            window.open(`https://www.google.com/maps?q=${userLat},${userLng}`, "_blank");
+        }
+
+        function vmDrawRoute(userLat, userLng, volLat, volLng) {
+            if (!vmMap) return;
+            if (volLat == null || volLng == null || userLat == null || userLng == null) return;
+
+            const key = `${volLat},${volLng}->${userLat},${userLng}`;
+            if (vmRouteKey === key) return;
+
+            if (vmRoute) {
+                vmMap.removeControl(vmRoute);
+                vmRoute = null;
+            }
+
+            vmRoute = L.Routing.control({
+                waypoints: [
+                L.latLng(volLat, volLng),
+                L.latLng(userLat, userLng)
+                ],
+                addWaypoints: false,
+                draggableWaypoints: false,
+                fitSelectedRoutes: false,
+                show: false,
+                lineOptions: {
+                styles: [
+                    { color: "#2E7D32", weight: 5, opacity: 0.8 } 
+                ]
+                },
+                router: L.Routing.osrmv1({
+                serviceUrl: "https://router.project-osrm.org/route/v1"
+                })
+            })
+            .on("routesfound", (e) => {
+                const route = e.routes?.[0];
+                if (!route) return;
+
+                const sec = route.summary?.totalTime;
+                const meters = route.summary?.totalDistance;
+
+                if (sec != null) {
+                const etaMin = Math.max(1, Math.round(sec / 60));
+                const km = meters != null ? (meters / 1000).toFixed(1) : null;
+
+                const el = document.getElementById("vmEta");
+                if (el) {
+                el.innerHTML = `
+                    <div class="alert-box info">
+                        📍 ${etaMin} мин • ${km ? `${km} км` : ""}
+                    </div>
+                    `;
+                }
+                }
+            })
+            .addTo(vmMap);
+
+            vmRouteKey = key;
+        }
+
+
+        function vmFocusAll() {
+            if (!vmMap) return;
+
+            const pts = [];
+            if (vmUserMarker) pts.push(vmUserMarker.getLatLng());
+            if (vmVolMarker) pts.push(vmVolMarker.getLatLng());
+
+            if (pts.length === 2) {
+                vmMap.fitBounds(L.latLngBounds(pts[0], pts[1]), { padding: [30, 30] });
+            } else if (pts.length === 1) {
+                vmMap.setView(pts[0], 15);
+            }
+        }
+
+        function hmInitMap(lat, lng) {
+            if (hmMap) return;
+
+            hmMap = L.map("hmLeaflet", { zoomControl: true }).setView([lat, lng], 14);
+
+            L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+                maxZoom: 19,
+                attribution: "&copy; OpenStreetMap"
+            }).addTo(hmMap);
+
+            setTimeout(() => {
+                if (hmMap) hmMap.invalidateSize(true);
+            }, 100);
+        }
+
+        function hmSetUser(lat, lng) {
+            if (!hmMap) hmInitMap(lat, lng);
+
+            if (!hmUserMarker) {
+                hmUserMarker = L.circleMarker([lat, lng], {
+                    radius: 9,
+                    color: "#2563eb",
+                    fillColor: "#3b82f6",
+                    weight: 3,
+                    fillOpacity: 0.9
+                }).addTo(hmMap);
+            } else {
+                hmUserMarker.setLatLng([lat, lng]);
+            }
+
+            hmUserMarker.bindPopup("📍 Вы здесь");
+        }
+
+        function hmSetHospitals(items) {
+            if (!hmMap) return;
+
+            if (hmHospitalLayer) {
+                hmHospitalLayer.remove();
+                hmHospitalLayer = null;
+            }
+
+            hmHospitalLayer = L.layerGroup();
+            items.forEach((x) => {
+                const m = L.circleMarker([x.lat, x.lng], {
+                    radius: 9,
+                    color: "#16a34a",
+                    fillColor: "#22c55e",
+                    weight: 3,
+                    fillOpacity: 0.9
+                });
+
+                const addr = x.address ? `<br>${x.address}` : "";
+                const phone = x.phone ? `<br>📞 ${x.phone}` : "";
+
+                m.bindPopup(`<strong>🏥 ${x.name}</strong>${addr}${phone}`);
+                hmHospitalLayer.addLayer(m);
+            });
+
+            hmHospitalLayer.addTo(hmMap);
+        }
+
+        function hmFitAll(userLat, userLng, items) {
+            if (!hmMap) return;
+
+            const pts = [];
+            if (userLat != null && userLng != null) pts.push(L.latLng(userLat, userLng));
+            for (const x of items) pts.push(L.latLng(x.lat, x.lng));
+
+            if (pts.length >= 2) {
+                hmMap.fitBounds(L.latLngBounds(pts), { padding: [30, 30] });
+            } else if (pts.length === 1) {
+                hmMap.setView(pts[0], 14);
+            }
+        }
+
+        function haversineKm(lat1, lng1, lat2, lng2) {
+            const R = 6371;
+            const toRad = (x) => x * Math.PI / 180;
+
+            const dLat = toRad(lat2 - lat1);
+            const dLng = toRad(lng2 - lng1);
+
+            const a =
+                Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+                Math.sin(dLng / 2) * Math.sin(dLng / 2);
+
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return R * c;
+        }
+
+        function hmRenderList(userLat, userLng, items) {
+            const box = document.getElementById("hmList");
+            if (!box) return;
+
+            let list = items.slice();
+
+            if (userLat != null && userLng != null) {
+                list = list.map(x => ({
+                    ...x,
+                    km: haversineKm(userLat, userLng, x.lat, x.lng)
+                })).sort((a, b) => a.km - b.km);
+            }
+
+            if (!list.length) {
+                box.innerHTML = `<div class="card">Ничего не найдено рядом.</div>`;
+                return;
+            }
+
+            box.innerHTML = list.slice(0, 12).map(x => `
+                <div class="card mb-3">
+                    <div style="display:flex;justify-content:space-between;gap:10px;margin-bottom:10px;">
+                        <div style="flex:1;">
+                            <h4 class="text-primary" style="font-weight:700;margin-bottom:4px;">${x.name}</h4>
+                            ${x.address ? `<div style="color:#666;font-size:13px;">${x.address}</div>` : `<div style="color:#999;font-size:13px;">Адрес не указан</div>`}
+                        </div>
+                        ${x.km != null ? `<span style="background:#E8F5E9;color:#2E7D32;padding:4px 12px;border-radius:12px;font-size:12px;font-weight:700;height:fit-content;">${x.km.toFixed(1)} км</span>` : ""}
+                    </div>
+
+                    <div style="display:flex;gap:8px;">
+                        <button class="btn btn-primary" style="flex:1;padding:12px;" onclick="window.open('https://www.google.com/maps?q=${x.lat},${x.lng}','_blank')">
+                            🗺️ Маршрут
+                        </button>
+                        ${x.phone ? `
+                            <button class="btn btn-outline" style="flex:1;padding:12px;" onclick="callPhone('${String(x.phone).replace(/'/g,"\\'")}')">
+                                📞 Позвонить
+                            </button>
+                        ` : `
+                            <button class="btn btn-outline" style="flex:1;padding:12px;" disabled>
+                                📞 Нет телефона
+                            </button>
+                        `}
+                    </div>
+                </div>
+            `).join("");
+        }
+
+
+
+        
+
+        function stopVolunteerGeo() {
+            if (volGeoTimer) {
+                clearInterval(volGeoTimer);
+                volGeoTimer = null;
+            }
+        }
+
+        function startVolunteerGeo() {
+            stopVolunteerGeo();
+
+            const tick = async () => {
+                try {
+                    if (appState.userRole !== "volunteer") return;
+
+                    const id = appState.selectedRequestId;
+                    if (!id) return;
+
+                    const geo = await getGeo();
+                    if (geo.lat == null || geo.lng == null) return;
+
+                    await api(`/volunteer/requests/${id}/location`, "PATCH", {
+                        volunteer_lat: geo.lat,
+                        volunteer_lng: geo.lng
+                    }, true);
+                } catch (e) {}
+            };
+
+            tick();
+            volGeoTimer = setInterval(tick, 10000);
+        }
+
+        async function osrmEta(lat1, lng1, lat2, lng2) {
+            const url = `https://router.project-osrm.org/route/v1/driving/${lng1},${lat1};${lng2},${lat2}?overview=false`;
+            const res = await fetch(url);
+            const data = await res.json();
+
+            const r = data?.routes?.[0];
+            if (!r) return null;
+
+            const minutes = Math.max(1, Math.round(r.duration / 60));
+            const km = (r.distance / 1000).toFixed(1);
+            return { minutes, km };
+        }
+        function startUserEta(requestId) {
+            stopUserEta();
+
+            const tick = async () => {
+                try {
+                const r = await api(`/requests/${requestId}/track`, "GET", null, true);
+
+                const userLat = r.lat;
+                const userLng = r.lng;
+                const volLat = r.volunteer_lat;
+                const volLng = r.volunteer_lng;
+
+                const box = document.getElementById("userEtaBox");
+                if (!box) return;
+
+                if (
+                    userLat == null || userLng == null ||
+                    volLat == null || volLng == null ||
+                    !(r.status === "accepted" || r.status === "in_progress")
+                ) {
+                    box.innerHTML = "";
+                    return;
+                }
+
+                box.innerHTML = `<div class="alert-box info">🧭 Обновляем время прибытия…</div>`;
+
+                const eta = await osrmEta(volLat, volLng, userLat, userLng);
+                if (!eta) return;
+
+                box.innerHTML = `
+                    <div class="alert-box info">
+                    🚗 Волонтёр будет примерно через <strong>${eta.minutes}</strong> мин • ${eta.km} км
+                    </div>
+                `;
+                } catch (e) {}
+            };
+
+            tick();
+            userEtaTimer = setInterval(tick, 10000);
+        }
+
+
+        async function fetchNearbyHospitalsOSM(lat, lng, radiusMeters = 5000, limit = 30) {
+            const query = `
+        [out:json][timeout:25];
+        (
+        node["amenity"="hospital"](around:${radiusMeters},${lat},${lng});
+        way["amenity"="hospital"](around:${radiusMeters},${lat},${lng});
+        relation["amenity"="hospital"](around:${radiusMeters},${lat},${lng});
+
+        node["amenity"="clinic"](around:${radiusMeters},${lat},${lng});
+        way["amenity"="clinic"](around:${radiusMeters},${lat},${lng});
+        relation["amenity"="clinic"](around:${radiusMeters},${lat},${lng});
+        );
+        out center tags;
+        `;
+
+            const url = "https://overpass-api.de/api/interpreter";
+            const res = await fetch(url, {
+                method: "POST",
+                headers: { "Content-Type": "text/plain;charset=UTF-8" },
+                body: query
+            });
+
+            const data = await res.json();
+            const els = data.elements || [];
+
+            const items = els.map((e) => {
+                const name = e.tags?.name || e.tags?.["name:ru"] || e.tags?.["name:en"] || "Больница/клиника";
+                const phone = e.tags?.phone || e.tags?.["contact:phone"] || "";
+                const address = [
+                    e.tags?.["addr:city"],
+                    e.tags?.["addr:street"],
+                    e.tags?.["addr:housenumber"]
+                ].filter(Boolean).join(", ");
+
+                const pLat = e.type === "node" ? e.lat : e.center?.lat;
+                const pLng = e.type === "node" ? e.lon : e.center?.lon;
+
+                if (pLat == null || pLng == null) return null;
+
+                return {
+                    id: `${e.type}-${e.id}`,
+                    name,
+                    address,
+                    phone,
+                    lat: pLat,
+                    lng: pLng
+                };
+            }).filter(Boolean);
+
+            const uniq = new Map();
+            for (const x of items) {
+                const key = `${x.lat.toFixed(6)},${x.lng.toFixed(6)}|${x.name}`;
+                if (!uniq.has(key)) uniq.set(key, x);
+            }
+
+            return Array.from(uniq.values()).slice(0, limit);
+        }
+
+
+
+
+
+
+
+        async function geocodeAddress(address) {
+            const q = (address || "").trim();
+            if (!q) return null;
+
+            const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=1`;
+            const res = await fetch(url, { headers: { "Accept": "application/json" } });
+            const data = await res.json();
+
+            if (!Array.isArray(data) || !data.length) return null;
+
+            return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+        }
+
+
+        function callPhone(phone) {
+            const p = (phone || "").toString().trim();
+            if (!p) return;
+            window.location.href = "tel:" + p;
+        }
+
+
+        function fmtLocal(dt) {
+            if (!dt) return "—";
+            const d = (dt instanceof Date) ? dt : new Date(dt);
+            if (isNaN(d.getTime())) return "—";
+            return d.toLocaleString(undefined, {
+                year: "numeric",
+                month: "2-digit",
+                day: "2-digit",
+                hour: "2-digit",
+                minute: "2-digit"
+            });
+        }
+
+
+
+
+
+
+
+
+
+    </script>
+</body>
+</html>
